@@ -1,0 +1,42 @@
+export const behaviorRulesMockData = [
+  {
+    id: 1,
+    name: "Class Disruption",
+    category: "Classroom Conduct",
+    severity: "Medium",
+    description: "Students talking out of turn or interrupting",
+    consequences: "Warning, detention if repeated",
+  },
+  {
+    id: 2,
+    name: "Late Assignments",
+    category: "Academic",
+    severity: "Low",
+    description: "Submitting assignments after deadline",
+    consequences: "Points deduction",
+  },
+  {
+    id: 3,
+    name: "Fighting",
+    category: "Violence",
+    severity: "High",
+    description: "Physical altercation between students",
+    consequences: "Suspension, parent meeting",
+  },
+  {
+    id: 4,
+    name: "Attendance",
+    category: "Attendance",
+    severity: "Medium",
+    description: "Excessive absences or tardiness",
+    consequences: "Parent notification, disciplinary action",
+  },
+  {
+    id: 5,
+    name: "Dishonesty",
+    category: "Academic Integrity",
+    severity: "High",
+    description: "Cheating or plagiarism",
+    consequences: "Zero grade, detention",
+  },
+];

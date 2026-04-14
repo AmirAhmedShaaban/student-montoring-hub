@@ -1,0 +1,240 @@
+export const clusteringMockData = {
+  filters: {
+    dateRanges: [
+      { value: "last-30-days", label: "Last 30 days" },
+      { value: "last-90-days", label: "Last 90 days" },
+      { value: "this-semester", label: "This semester" },
+    ],
+    schoolYears: [
+      { value: "2024-2025", label: "2024 - 2025" },
+      { value: "2025-2026", label: "2025 - 2026" },
+    ],
+    gradeLevels: [
+      { value: "all", label: "All grades" },
+      { value: "Grade 7", label: "Grade 7" },
+      { value: "Grade 8", label: "Grade 8" },
+      { value: "Grade 9", label: "Grade 9" },
+      { value: "Grade 10", label: "Grade 10" },
+      { value: "Grade 11", label: "Grade 11" },
+      { value: "Grade 12", label: "Grade 12" },
+    ],
+  },
+  clusters: [
+    {
+      id: "cluster-a",
+      name: "Cluster A",
+      label: "At-Risk",
+      mainIssue: "Frequent absences and missed classwork",
+      badgeClass: "bg-rose-50 text-rose-700 ring-rose-100",
+      dotClass: "bg-rose-500",
+    },
+    {
+      id: "cluster-b",
+      name: "Cluster B",
+      label: "Disengaged",
+      mainIssue: "Low participation and weak assignment momentum",
+      badgeClass: "bg-amber-50 text-amber-700 ring-amber-100",
+      dotClass: "bg-amber-500",
+    },
+    {
+      id: "cluster-c",
+      name: "Cluster C",
+      label: "High Potential",
+      mainIssue: "Strong grades with inconsistent behavior signals",
+      badgeClass: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+      dotClass: "bg-emerald-500",
+    },
+  ],
+  students: [
+    {
+      id: "stu-1001",
+      studentId: "S-1001",
+      name: "Amina Santos",
+      clusterId: "cluster-a",
+      gradeLevel: "Grade 9",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-30-days", "last-90-days", "this-semester"],
+      attendanceRate: 78,
+      gradeAverage: 64,
+      absenteeismRate: 22,
+      riskLabel: "At-Risk",
+      recentIncidents: [
+        "Missed two morning classes last week",
+        "Incomplete science lab submission",
+      ],
+      recentNote:
+        "Needs a short-term attendance plan and extra submission reminders.",
+      suggestedAction:
+        "Schedule a family check-in and review assignment deadlines twice per week.",
+    },
+    {
+      id: "stu-1002",
+      studentId: "S-1002",
+      name: "Brian Okafor",
+      clusterId: "cluster-a",
+      gradeLevel: "Grade 10",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-90-days", "this-semester"],
+      attendanceRate: 74,
+      gradeAverage: 61,
+      absenteeismRate: 26,
+      riskLabel: "At-Risk",
+      recentIncidents: [
+        "Late arrival pattern for three consecutive days",
+        "Missing homework in mathematics",
+      ],
+      recentNote:
+        "Responds well to direct check-ins but needs structure around attendance.",
+      suggestedAction:
+        "Assign a mentor and monitor attendance every Monday and Friday.",
+    },
+    {
+      id: "stu-1003",
+      studentId: "S-1003",
+      name: "Chloe Martinez",
+      clusterId: "cluster-b",
+      gradeLevel: "Grade 8",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-30-days", "last-90-days", "this-semester"],
+      attendanceRate: 82,
+      gradeAverage: 72,
+      absenteeismRate: 18,
+      riskLabel: "Disengaged",
+      recentIncidents: [
+        "Low participation in English discussion",
+        "One unexcused absence during advisory",
+      ],
+      recentNote:
+        "Performance is stable, but classroom engagement is inconsistent.",
+      suggestedAction:
+        "Use a quick participation goal and track weekly engagement notes.",
+    },
+    {
+      id: "stu-1004",
+      studentId: "S-1004",
+      name: "Daniel Kim",
+      clusterId: "cluster-b",
+      gradeLevel: "Grade 11",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-90-days", "this-semester"],
+      attendanceRate: 69,
+      gradeAverage: 68,
+      absenteeismRate: 31,
+      riskLabel: "Disengaged",
+      recentIncidents: [
+        "Frequent tardiness before first period",
+        "Incomplete classwork in history",
+      ],
+      recentNote:
+        "Attendance issues are beginning to affect academic consistency.",
+      suggestedAction:
+        "Offer a daily check-in and connect completion tasks to a study plan.",
+    },
+    {
+      id: "stu-1005",
+      studentId: "S-1005",
+      name: "Elena Rahman",
+      clusterId: "cluster-c",
+      gradeLevel: "Grade 12",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-30-days", "last-90-days", "this-semester"],
+      attendanceRate: 96,
+      gradeAverage: 92,
+      absenteeismRate: 4,
+      riskLabel: "High Potential",
+      recentIncidents: [
+        "Minor behavior note during group work",
+        "One late assignment in economics",
+      ],
+      recentNote:
+        "Excellent academic profile; consistency in behavior will keep momentum high.",
+      suggestedAction:
+        "Offer leadership opportunities and keep a light-touch check-in cadence.",
+    },
+    {
+      id: "stu-1006",
+      studentId: "S-1006",
+      name: "Farah Ali",
+      clusterId: "cluster-c",
+      gradeLevel: "Grade 10",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-30-days", "last-90-days", "this-semester"],
+      attendanceRate: 94,
+      gradeAverage: 89,
+      absenteeismRate: 6,
+      riskLabel: "High Potential",
+      recentIncidents: [
+        "One reminder needed for classroom device policy",
+        "Strong math project presentation",
+      ],
+      recentNote:
+        "High academic upside with a small number of behavior reminders.",
+      suggestedAction:
+        "Recognize progress publicly and keep the student in advanced extension tasks.",
+    },
+    {
+      id: "stu-1007",
+      studentId: "S-1007",
+      name: "Gabriel Reed",
+      clusterId: "cluster-a",
+      gradeLevel: "Grade 9",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-90-days", "this-semester"],
+      attendanceRate: 71,
+      gradeAverage: 66,
+      absenteeismRate: 29,
+      riskLabel: "At-Risk",
+      recentIncidents: [
+        "Skipped advisory check-in twice",
+        "Math worksheet missing at review time",
+      ],
+      recentNote:
+        "Requires consistent attendance messaging and short academic targets.",
+      suggestedAction:
+        "Pair with a trusted staff member and verify homework completion daily.",
+    },
+    {
+      id: "stu-1008",
+      studentId: "S-1008",
+      name: "Hana Lopez",
+      clusterId: "cluster-b",
+      gradeLevel: "Grade 11",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-30-days", "last-90-days", "this-semester"],
+      attendanceRate: 80,
+      gradeAverage: 70,
+      absenteeismRate: 20,
+      riskLabel: "Disengaged",
+      recentIncidents: [
+        "Low class discussion participation",
+        "Late arrival after lunch period",
+      ],
+      recentNote:
+        "Shows capability, but engagement is softer than the academic profile suggests.",
+      suggestedAction:
+        "Use one-to-one goal setting and place the student in a high-accountability group.",
+    },
+    {
+      id: "stu-1009",
+      studentId: "S-1009",
+      name: "Ibrahim Hassan",
+      clusterId: "cluster-c",
+      gradeLevel: "Grade 12",
+      schoolYear: "2025-2026",
+      dateRangeKeys: ["last-90-days", "this-semester"],
+      attendanceRate: 95,
+      gradeAverage: 91,
+      absenteeismRate: 5,
+      riskLabel: "High Potential",
+      recentIncidents: [
+        "Leadership role in peer tutoring",
+        "Needs occasional redirection during independent work",
+      ],
+      recentNote:
+        "A strong candidate for a leadership pathway and peer support role.",
+      suggestedAction:
+        "Invite the student to mentor peers and track behavior with positive feedback.",
+    },
+  ],
+  defaultSelectedStudentId: "stu-1005",
+};
