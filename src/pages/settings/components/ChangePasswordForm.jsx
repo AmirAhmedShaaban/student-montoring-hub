@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { Button, PasswordInput } from "./SettingsUI";
+import { changePassword } from "../../../services/currentUserService";
 
 function ChangePasswordForm({ minLength }) {
   const currentPasswordId = useId();
@@ -30,7 +31,12 @@ function ChangePasswordForm({ minLength }) {
       return;
     }
 
-    setMessage("Password updated in the local demo state.");
+    const result = changePassword({
+      currentPassword: formData.currentPassword,
+      newPassword: formData.newPassword,
+    });
+
+    setMessage(result.message);
     setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
   };
 

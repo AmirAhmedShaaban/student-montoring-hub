@@ -1,10 +1,8 @@
-import { useState } from "react";
-
 function Card({ id, title, description, action, children, className = "" }) {
   return (
     <section
       id={id}
-      className={`rounded-[2rem] border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/60 backdrop-blur sm:p-8 ${className}`.trim()}
+      className={`rounded-[1.75rem] border border-slate-200 bg-white/95 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-8 ${className}`.trim()}
     >
       {title || description || action ? (
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
@@ -80,57 +78,23 @@ function Input({ id, label, description, error, className = "", ...props }) {
   );
 }
 
-function TextArea({ id, label, description, error, className = "", ...props }) {
-  return (
-    <FieldShell id={id} label={label} description={description} error={error}>
-      {({ describedBy }) => (
-        <textarea
-          id={id}
-          name={id}
-          aria-describedby={describedBy}
-          aria-invalid={error ? "true" : undefined}
-          className={`${fieldClassName(Boolean(error))} min-h-32 resize-y ${className}`.trim()}
-          {...props}
-        />
-      )}
-    </FieldShell>
-  );
-}
-
-function Button({ variant = "primary", className = "", ...props }) {
-  const variants = {
-    primary:
-      "bg-slate-950 text-white hover:bg-slate-800 focus-visible:ring-slate-900/20",
-    secondary:
-      "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-slate-900/10",
-  };
-
-  return (
-    <button
-      className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant] ?? variants.primary} ${className}`.trim()}
-      {...props}
-    />
-  );
-}
-
 function Accordion({ children, className = "" }) {
   return <div className={`space-y-4 ${className}`.trim()}>{children}</div>;
 }
 
-function AccordionItem({ id, title, children, defaultOpen = false }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+function AccordionItem({ id, title, children, isOpen, onToggle }) {
   const buttonId = `${id}-trigger`;
   const panelId = `${id}-panel`;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/80 transition hover:border-slate-300">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/90 transition hover:border-sky-200 hover:bg-sky-50/60">
       <h3 className="m-0">
         <button
           id={buttonId}
           type="button"
           aria-expanded={isOpen}
           aria-controls={panelId}
-          onClick={() => setIsOpen((current) => !current)}
+          onClick={onToggle}
           className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-inset"
         >
           <span className="text-sm font-semibold leading-6 text-slate-900 sm:text-base">
@@ -149,15 +113,16 @@ function AccordionItem({ id, title, children, defaultOpen = false }) {
         id={panelId}
         role="region"
         aria-labelledby={buttonId}
-        hidden={!isOpen}
-        className="px-4 pb-4"
+        className={`grid transition-all duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
       >
-        <div className="rounded-2xl bg-white px-4 py-4 text-sm leading-7 text-slate-600">
-          {children}
+        <div className="overflow-hidden px-4 pb-4">
+          <div className="rounded-2xl bg-white px-4 py-4 text-sm leading-7 text-slate-600 shadow-sm shadow-slate-200/60">
+            {children}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-export { Accordion, AccordionItem, Button, Card, Input, TextArea };
+export { Accordion, AccordionItem, Card, Input };

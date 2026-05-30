@@ -1,6 +1,6 @@
 import { Card } from "./SettingsUI";
 
-function SettingsHeader({ account, preferences }) {
+function SettingsHeader({ account }) {
   return (
     <Card className="bg-gradient-to-br from-sky-50 via-white to-emerald-50">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -19,8 +19,8 @@ function SettingsHeader({ account, preferences }) {
           </div>
         </div>
 
-        <dl className="grid gap-3 sm:grid-cols-2 lg:min-w-[360px]">
-          <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm">
+        <dl className="grid gap-3 sm:grid-cols-2 lg:min-w-[280px]">
+          <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm sm:col-span-2">
             <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
               Account status
             </dt>
@@ -29,18 +29,6 @@ function SettingsHeader({ account, preferences }) {
             </dd>
             <dd className="mt-1 text-sm leading-6 text-slate-600">
               Joined {account.joinedOn}
-            </dd>
-          </div>
-
-          <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Default language
-            </dt>
-            <dd className="mt-2 text-sm font-semibold text-slate-900">
-              {preferences.language}
-            </dd>
-            <dd className="mt-1 text-sm leading-6 text-slate-600">
-              Notifications and labels follow this setting.
             </dd>
           </div>
         </dl>

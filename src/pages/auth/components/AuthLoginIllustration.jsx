@@ -14,23 +14,23 @@ function AuthLoginIllustration() {
 
         <div className="max-w-lg space-y-4">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">
-            Secure access
+            Staff access
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-900 xl:text-5xl">
-            Calm, focused access for your student support team.
+            Behavior monitoring and AI analysis in one workspace.
           </h1>
           <p className="text-base leading-7 text-slate-600 xl:text-lg">
-            View behavior trends, coordinate interventions, and keep school
-            staff aligned with a dashboard designed for clarity.
+            Review attendance, incidents, and intervention follow-up from a
+            focused school dashboard.
           </p>
         </div>
       </div>
 
       <div className="relative grid gap-4 sm:grid-cols-3">
         {[
-          { value: "24/7", label: "availability" },
-          { value: "Fast", label: "insights" },
-          { value: "Simple", label: "workflow" },
+          { value: "Attendance", label: "review" },
+          { value: "Risk", label: "flags" },
+          { value: "Follow-up", label: "tracking" },
         ].map((item) => (
           <div
             key={item.label}

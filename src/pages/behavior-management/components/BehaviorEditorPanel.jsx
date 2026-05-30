@@ -18,15 +18,15 @@ function BehaviorEditorPanel({
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">
-            Editor panel
+            Intervention guidance
           </p>
           <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
-            {rule?.name?.trim() ? rule.name : "Create a behavior rule"}
+            {rule?.name?.trim() ? rule.name : "Select an intervention rule"}
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-slate-600">
             {rule
-              ? "Adjust the rule details, severity, and active state without leaving the page."
-              : "Start a new rule, then use the form to define how the school should respond."}
+              ? "Review the incident response, severity, and active state."
+              : "Choose a rule to review the intervention response."}
           </p>
         </div>
 
@@ -35,7 +35,7 @@ function BehaviorEditorPanel({
           onClick={onCreateRule}
           className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
         >
-          New rule
+          Add rule
         </button>
       </div>
 
@@ -78,7 +78,7 @@ function BehaviorEditorPanel({
         </div>
       ) : (
         <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-sm leading-6 text-slate-600">
-          Select a rule from the list or create a new one to begin editing.
+          Select a rule from the list to review the incident response.
         </div>
       )}
     </section>

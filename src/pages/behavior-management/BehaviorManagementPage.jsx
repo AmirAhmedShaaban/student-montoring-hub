@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useDashboardMockData } from "../../mocks/dashboard.mock";
 import { behaviorRulesMockData } from "../../mocks/behaviorRules.mock";
 import BehaviorEditorPanel from "./components/BehaviorEditorPanel";
 import BehaviorRulesList from "./components/BehaviorRulesList";
@@ -16,6 +17,7 @@ function createRuleDraft(rule = {}) {
 }
 
 function BehaviorManagementPage() {
+  const dashboardData = useDashboardMockData();
   const [rules, setRules] = useState([]);
   const [selectedRuleId, setSelectedRuleId] = useState(null);
   const [draftRule, setDraftRule] = useState(createRuleDraft());
@@ -147,11 +149,11 @@ function BehaviorManagementPage() {
               Behavior management
             </p>
             <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-              Manage behavior rules with one focused workspace
+              Review incidents and intervention rules in one focused workspace
             </h1>
             <p className="max-w-2xl text-base leading-7 text-slate-600">
-              Search existing rules, review the rule cards, and edit the details
-              in the side panel without leaving the page.
+              Review incidents, classifications, severity, and interventions
+              alongside the current AI analysis result.
             </p>
           </div>
 
@@ -180,17 +182,65 @@ function BehaviorManagementPage() {
         </div>
       </section>
 
+      <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+        <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-950">
+              Latest AI analysis
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Shared result currently driving monitoring and follow-up.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+            {dashboardData.latestAnalysisResult.followUpStatus}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-sm font-medium text-slate-500">Classification</p>
+            <p className="mt-2 text-lg font-semibold text-slate-950">
+              {dashboardData.latestAnalysisResult.classification}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-sm font-medium text-slate-500">Risk level</p>
+            <p className="mt-2 text-lg font-semibold text-slate-950">
+              {dashboardData.latestAnalysisResult.riskLevel}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-sm font-medium text-slate-500">Cluster</p>
+            <p className="mt-2 text-lg font-semibold text-slate-950">
+              {dashboardData.latestAnalysisResult.cluster}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-sm font-medium text-slate-500">
+              Latest incident
+            </p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-950">
+              {dashboardData.latestAnalysisResult.latestIncident}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+          Suggested intervention: {dashboardData.latestAnalysisResult.suggestedIntervention}
+        </div>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <div className="space-y-6">
           <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
             <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-950">
-                  Behavior rules list
+                  Behavior incidents and rules
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Filter by name, category, severity, description, or
-                  consequence.
+                  Filter by incident rule, category, severity, or response.
                 </p>
               </div>
 
@@ -199,7 +249,7 @@ function BehaviorManagementPage() {
                 onClick={handleCreateRule}
                 className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
               >
-                Create rule
+                Add rule
               </button>
             </div>
 
@@ -208,7 +258,7 @@ function BehaviorManagementPage() {
                 htmlFor="behavior-rule-search"
                 className="block text-sm font-semibold text-slate-800"
               >
-                Search rules
+                Search incidents
               </label>
               <input
                 id="behavior-rule-search"
@@ -216,7 +266,7 @@ function BehaviorManagementPage() {
                 name="behavior-rule-search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search by rule, category, severity, or description"
+                placeholder="Search by incident, category, severity, or response"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
               />
 

@@ -21,7 +21,7 @@ function StudentProfileHeader({ student }) {
   return (
     <SectionCard
       title={student.name}
-      description="Student profile summary, behavior signals, and notes in one place."
+      description="Student behavior, attendance, and intervention notes in one place."
       action={
         <Link
           to="/dashboard"
@@ -66,7 +66,7 @@ function StudentProfileHeader({ student }) {
               <div>
                 <dt className="font-medium text-slate-500">Quick summary</dt>
                 <dd className="mt-1 text-base font-medium text-slate-950">
-                  Balanced support plan with room for growth.
+                  Current support plan with active monitoring.
                 </dd>
               </div>
             </dl>
@@ -79,8 +79,7 @@ function StudentProfileHeader({ student }) {
             {student.riskLevel} support
           </p>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Use the behavior and notes tabs to track interventions, parent
-            follow-up, and positive momentum.
+            Use the behavior and notes tabs to track interventions, family follow-up, and progress.
           </p>
         </div>
       </div>

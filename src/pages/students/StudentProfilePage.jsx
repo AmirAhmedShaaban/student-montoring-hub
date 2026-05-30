@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useDashboardMockData } from "../../mocks/dashboard.mock";
 import { studentMockData } from "../../mocks/student.mock";
 
 import AddNoteForm from "./components/AddNoteForm";
@@ -15,7 +16,7 @@ import {
   STUDENT_PROFILE_TABS,
 } from "./studentProfile.utils";
 
-function StudentProfileWorkspace({ profile }) {
+function StudentProfileWorkspace({ profile, latestAnalysis }) {
   const [activeTab, setActiveTab] = useState(STUDENT_PROFILE_TABS[0].id);
   const [notes, setNotes] = useState(profile.notes);
   const [draftNote, setDraftNote] = useState({
@@ -60,42 +61,86 @@ function StudentProfileWorkspace({ profile }) {
     if (activeTab === "overview") {
       return (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="grid gap-6 md:grid-cols-2">
-            <ProfileStatCard
-              label="Attendance"
-              value={`${Math.round(profile.attendanceRate)}%`}
-              detail={profile.attendanceDetail}
-              accent="bg-sky-50 text-sky-700 ring-sky-100"
-            />
-            <ProfileStatCard
-              label="GPA"
-              value={profile.gpa.toFixed(2)}
-              detail={profile.gpaDetail}
-              accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
-            />
+          <div className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <ProfileStatCard
+                label="Attendance"
+                value={`${Math.round(profile.attendanceRate)}%`}
+                detail={profile.attendanceDetail}
+                accent="bg-sky-50 text-sky-700 ring-sky-100"
+              />
+              <ProfileStatCard
+                label="GPA"
+                value={profile.gpa.toFixed(2)}
+                detail={profile.gpaDetail}
+                accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
+              />
+            </div>
+
+            <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+              <h2 className="text-lg font-semibold text-slate-950">
+                Quick profile
+              </h2>
+              <dl className="mt-5 space-y-4 text-sm">
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                  <dt className="text-slate-500">Homeroom</dt>
+                  <dd className="font-medium text-slate-900">
+                    {profile.className}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                  <dt className="text-slate-500">Risk level</dt>
+                  <dd className="font-medium text-slate-900">
+                    {profile.riskLevel}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-slate-500">Last updated</dt>
+                  <dd className="font-medium text-slate-900">
+                    {profile.lastUpdated}
+                  </dd>
+                </div>
+              </dl>
+            </section>
           </div>
 
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
             <h2 className="text-lg font-semibold text-slate-950">
-              Quick profile
+              Latest AI analysis
             </h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Shared result from the latest uploaded media.
+            </p>
+
             <dl className="mt-5 space-y-4 text-sm">
               <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                <dt className="text-slate-500">Homeroom</dt>
+                <dt className="text-slate-500">Classification</dt>
                 <dd className="font-medium text-slate-900">
-                  {profile.className}
+                  {latestAnalysis.classification}
+                </dd>
+              </div>
+              <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                <dt className="text-slate-500">Cluster</dt>
+                <dd className="font-medium text-slate-900">
+                  {latestAnalysis.cluster}
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
                 <dt className="text-slate-500">Risk level</dt>
                 <dd className="font-medium text-slate-900">
-                  {profile.riskLevel}
+                  {latestAnalysis.riskLevel}
+                </dd>
+              </div>
+              <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                <dt className="text-slate-500">Follow-up</dt>
+                <dd className="font-medium text-slate-900">
+                  {latestAnalysis.followUpStatus}
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <dt className="text-slate-500">Last updated</dt>
+                <dt className="text-slate-500">Suggested intervention</dt>
                 <dd className="font-medium text-slate-900">
-                  {profile.lastUpdated}
+                  {latestAnalysis.suggestedIntervention}
                 </dd>
               </div>
             </dl>
@@ -163,6 +208,7 @@ function StudentProfileWorkspace({ profile }) {
 
 function StudentProfilePage() {
   const { id } = useParams();
+  const dashboardData = useDashboardMockData();
 
   const profile = useMemo(() => {
     const mockStudent = studentMockData.find(
@@ -173,7 +219,13 @@ function StudentProfilePage() {
     return buildStudentProfile(selectedStudent);
   }, [id]);
 
-  return <StudentProfileWorkspace key={profile.id} profile={profile} />;
+  return (
+    <StudentProfileWorkspace
+      key={profile.id}
+      profile={profile}
+      latestAnalysis={dashboardData.latestAnalysisResult}
+    />
+  );
 }
 
 export default StudentProfilePage;

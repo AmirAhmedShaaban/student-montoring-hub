@@ -1,21 +1,22 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getPasswordStrength, registerDummyUser } from "../../utils/auth";
+import { getPasswordStrength, register } from "../../services/authService";
 
 const roleOptions = ["Teacher", "Counselor", "Principal", "Staff"];
 
 function RegisterPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     role: "Teacher",
     password: "",
     confirmPassword: "",
-    termsAccepted: false,
+    agreeToTerms: false,
   });
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const passwordStrength = useMemo(
     () => getPasswordStrength(formData.password),
@@ -35,7 +36,7 @@ function RegisterPage() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
@@ -43,26 +44,36 @@ function RegisterPage() {
       return;
     }
 
-    if (!formData.termsAccepted) {
+    if (!formData.agreeToTerms) {
       setErrorMessage(
         "You need to accept the terms before creating an account.",
       );
       return;
     }
 
-    const registerResult = registerDummyUser({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      role: formData.role,
-    });
+    setIsLoading(true);
+    setErrorMessage("");
 
-    if (!registerResult.success) {
-      setErrorMessage(registerResult.message);
-      return;
+    try {
+      // Direct integration with the live SmarterASP.NET backend API
+      const registerResult = await register(formData);
+
+      if (!registerResult.success) {
+        setErrorMessage(registerResult.message);
+        setIsLoading(false);
+        return;
+      }
+
+      // Redirect directly to dashboard upon successful registration sequence
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      console.log(`${error} 💥💥💥`);
+      setErrorMessage(
+        "An unexpected registration error occurred. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
     }
-
-    navigate("/dashboard", { replace: true });
   };
 
   return (
@@ -79,34 +90,21 @@ function RegisterPage() {
 
             <div className="max-w-lg space-y-4">
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">
-                Create access
+                Create staff account
               </p>
               <h1 className="text-4xl font-semibold tracking-tight text-slate-900 xl:text-5xl">
-                Set up your account and start monitoring student progress.
+                Create access for counselors and administrators.
               </h1>
               <p className="text-base leading-7 text-slate-600 xl:text-lg">
-                Use the same dummy access flow for now, then swap in the real
-                database later without changing the UI.
+                Use the form to set up a local staff account for dashboard
+                access.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              { value: "Fast", label: "setup" },
-              { value: "Safe", label: "dummy data" },
-              { value: "Ready", label: "for backend" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-white/70 bg-white/80 p-4 text-center shadow-sm backdrop-blur"
-              >
-                <div className="text-2xl font-semibold text-slate-900">
-                  {item.value}
-                </div>
-                <div className="mt-1 text-sm text-slate-600">{item.label}</div>
-              </div>
-            ))}
+          <div className="rounded-2xl border border-white/70 bg-white/80 p-4 text-sm leading-6 text-slate-600 shadow-sm backdrop-blur">
+            Keep a single staff record for dashboard access and intervention
+            review.
           </div>
         </section>
 
@@ -132,21 +130,22 @@ function RegisterPage() {
           <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
             <div className="space-y-2">
               <label
-                htmlFor="name"
+                htmlFor="fullName"
                 className="block text-sm font-medium text-slate-700"
               >
                 Full Name
               </label>
               <input
-                id="name"
-                name="name"
+                id="fullName"
+                name="fullName"
                 type="text"
-                value={formData.name}
+                disabled={isLoading}
+                value={formData.fullName}
                 onChange={handleChange}
                 placeholder="Enter your full name"
                 autoComplete="name"
                 required
-                className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -161,12 +160,13 @@ function RegisterPage() {
                 id="email"
                 name="email"
                 type="email"
+                disabled={isLoading}
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="yourname@example.com"
                 autoComplete="email"
                 required
-                className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -180,9 +180,10 @@ function RegisterPage() {
               <select
                 id="role"
                 name="role"
+                disabled={isLoading}
                 value={formData.role}
                 onChange={handleChange}
-                className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {roleOptions.map((role) => (
                   <option key={role} value={role}>
@@ -204,12 +205,13 @@ function RegisterPage() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
+                  disabled={isLoading}
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
                   autoComplete="new-password"
                   required
-                  className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-16 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                  className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-16 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
@@ -251,22 +253,24 @@ function RegisterPage() {
                 id="confirmPassword"
                 name="confirmPassword"
                 type={showPassword ? "text" : "password"}
+                disabled={isLoading}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm your password"
                 autoComplete="new-password"
                 required
-                className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10"
+                className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
 
             <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
               <input
                 type="checkbox"
-                name="termsAccepted"
-                checked={formData.termsAccepted}
+                name="agreeToTerms"
+                disabled={isLoading}
+                checked={formData.agreeToTerms}
                 onChange={handleChange}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 disabled:opacity-60"
               />
               <span>
                 I agree to the{" "}
@@ -289,9 +293,14 @@ function RegisterPage() {
 
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:-translate-y-0.5 hover:bg-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-500/20"
+              disabled={isLoading}
+              className={`inline-flex w-full items-center justify-center rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition focus:outline-none focus:ring-4 focus:ring-sky-500/20 ${
+                isLoading
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:-translate-y-0.5 hover:bg-sky-500"
+              }`}
             >
-              Create Account
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 

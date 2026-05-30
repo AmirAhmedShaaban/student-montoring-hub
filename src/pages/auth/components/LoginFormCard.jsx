@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LoginInput from "./LoginInput";
-import { dummyUsers, signInWithDummyCredentials } from "../../../utils/auth";
+import { login } from "../../../services/authService";
 
 const formFields = [
   {
@@ -31,6 +31,7 @@ function LoginFormCard() {
     password: "",
   });
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -45,20 +46,32 @@ function LoginFormCard() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const loginResult = signInWithDummyCredentials(
-      formData.email,
-      formData.password,
-    );
+    console.log("SUBMIT CLICKED");
+    console.log(formData);
 
-    if (!loginResult.success) {
-      setErrorMessage(loginResult.message);
-      return;
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const loginResult = await login(formData.email, formData.password);
+
+      console.log("LOGIN RESULT", loginResult);
+
+      if (!loginResult.success) {
+        setErrorMessage(loginResult.message);
+        setIsLoading(false);
+        return;
+      }
+
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
     }
-
-    navigate("/dashboard", { replace: true });
   };
 
   return (
@@ -73,14 +86,6 @@ function LoginFormCard() {
         <p className="text-sm leading-6 text-slate-600 sm:text-base">
           Sign in to review reports, manage behavior records, and monitor
           student progress.
-        </p>
-      </div>
-
-      <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-        <p className="font-semibold">Dummy access for now</p>
-        <p className="mt-1 leading-6">
-          Try <span className="font-medium">{dummyUsers[0].email}</span> with{" "}
-          <span className="font-medium">{dummyUsers[0].password}</span>.
         </p>
       </div>
 
@@ -120,9 +125,14 @@ function LoginFormCard() {
 
         <button
           type="submit"
-          className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20"
+          disabled={isLoading}
+          className={`inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition focus:outline-none focus:ring-4 focus:ring-slate-900/20 ${
+            isLoading
+              ? "opacity-70 cursor-not-allowed"
+              : "hover:-translate-y-0.5 hover:bg-slate-800"
+          }`}
         >
-          Sign in
+          {isLoading ? "Signing in..." : "Sign in"}
         </button>
       </form>
 

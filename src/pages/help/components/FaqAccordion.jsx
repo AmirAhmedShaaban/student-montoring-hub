@@ -1,14 +1,14 @@
 import { Accordion, AccordionItem, Card } from "./HelpUI";
 
-function FaqItem({ item, defaultOpen = false }) {
+function FaqItem({ item, isOpen, onToggle }) {
   return (
-    <AccordionItem id={item.id} title={item.question} defaultOpen={defaultOpen}>
+    <AccordionItem id={item.id} title={item.question} isOpen={isOpen} onToggle={onToggle}>
       {item.answer}
     </AccordionItem>
   );
 }
 
-function FaqAccordion({ items }) {
+function FaqAccordion({ items, activeId, onToggle }) {
   return (
     <Card
       id="help-faqs"
@@ -17,8 +17,13 @@ function FaqAccordion({ items }) {
     >
       {items.length > 0 ? (
         <Accordion>
-          {items.map((item, index) => (
-            <FaqItem key={item.id} item={item} defaultOpen={index === 0} />
+          {items.map((item) => (
+            <FaqItem
+              key={item.id}
+              item={item}
+              isOpen={activeId === item.id}
+              onToggle={() => onToggle(item.id)}
+            />
           ))}
         </Accordion>
       ) : (

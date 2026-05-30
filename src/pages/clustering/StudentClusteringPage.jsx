@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useDashboardMockData } from "../../mocks/dashboard.mock";
 import { clusteringMockData } from "../../mocks/clustering.mock";
 
 import ClusterDetailsPanel from "./components/ClusterDetailsPanel";
@@ -28,6 +29,7 @@ function average(values, key) {
 }
 
 function StudentClusteringPage() {
+  const dashboardData = useDashboardMockData();
   const [draftFilters, setDraftFilters] = useState(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [activeView, setActiveView] = useState("scatter");
@@ -109,7 +111,7 @@ function StudentClusteringPage() {
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <ClusterPageHeader
         title="Student Clustering"
-        subtitle="Group students by behavior, attendance, and academic performance to identify intervention priorities and high-potential learners."
+        subtitle="Group students by behavior, attendance, and risk patterns to identify intervention priorities."
         action={<GenerateReportButton />}
       />
 
@@ -127,8 +129,14 @@ function StudentClusteringPage() {
             Cluster summaries
           </h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            Current grouping overview based on the active filters.
+            Grouping overview based on the active filters.
           </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          Recent review: {dashboardData.latestAnalysisResult.classification} in{" "}
+          {dashboardData.latestAnalysisResult.cluster} with{" "}
+          {dashboardData.latestAnalysisResult.riskLevel.toLowerCase()} risk.
         </div>
 
         <ClusterSummaryList clusters={clusterSummaries} />
@@ -143,8 +151,7 @@ function StudentClusteringPage() {
                   Cluster visualization
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Compare grade and absenteeism patterns, then select a student
-                  to inspect the details panel.
+                  Compare behavior and attendance patterns, then select a student.
                 </p>
               </div>
 

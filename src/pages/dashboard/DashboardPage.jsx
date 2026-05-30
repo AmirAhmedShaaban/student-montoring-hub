@@ -1,13 +1,13 @@
-import { dashboardMockData } from "../../mocks/dashboard.mock";
+import { useDashboardMockData } from "../../mocks/dashboard.mock";
 import {
   ActionTile,
-  BehaviorRow,
   DashboardCard,
   MetricTile,
 } from "./components/DashboardComponents";
+import AIUploadCard from "./components/AIUploadCard";
 
 function DashboardPage() {
-  const data = dashboardMockData;
+  const data = useDashboardMockData();
 
   return (
     <div className="space-y-6">
@@ -37,7 +37,7 @@ function DashboardPage() {
                 id="student-search"
                 type="search"
                 name="student-search"
-                placeholder="Search by name, ID, grade, or behavior tag"
+                placeholder="Search by name, ID, or behavior note"
                 className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
               />
               <button
@@ -50,6 +50,8 @@ function DashboardPage() {
           </div>
         </div>
       </section>
+
+      <AIUploadCard />
 
       <div className="grid gap-6 xl:grid-cols-12">
         <div className="space-y-6 xl:col-span-7">
@@ -67,20 +69,20 @@ function DashboardPage() {
               <MetricTile
                 label="Monitored today"
                 value={data.summary.monitoredToday}
-                detail="Students with activity reviewed today."
+                detail="Students reviewed in today&apos;s workflow."
                 accent="bg-sky-50 text-sky-700 ring-sky-100"
               />
               <MetricTile
-                label="Improving"
-                value={data.summary.improving}
-                detail="Students responding well to interventions."
-                accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
+                label="Follow-ups due"
+                value={data.summary.followUpsDue}
+                detail="Cases needing counselor or admin follow-up."
+                accent="bg-amber-50 text-amber-700 ring-amber-100"
               />
               <MetricTile
                 label="At risk"
                 value={data.studentsAtRisk}
                 detail="Students requiring priority follow-up."
-                accent="bg-amber-50 text-amber-700 ring-amber-100"
+                accent="bg-rose-50 text-rose-700 ring-rose-100"
               />
             </div>
 
@@ -103,10 +105,10 @@ function DashboardPage() {
               </div>
               <div className="rounded-2xl bg-slate-50 p-4">
                 <dt className="text-sm font-medium text-slate-600">
-                  Honor roll
+                  AI insights
                 </dt>
                 <dd className="mt-2 text-2xl font-semibold text-slate-950">
-                  {data.summary.honors}
+                  {data.summary.aiInsights}
                 </dd>
               </div>
             </dl>
@@ -125,8 +127,7 @@ function DashboardPage() {
                   {data.attendance.rate}%
                 </p>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  {data.attendance.present} present, {data.attendance.late}{" "}
-                  late, {data.attendance.absent} absent.
+                  {data.attendance.present} present, {data.attendance.late} late, {data.attendance.absent} absent.
                 </p>
                 <div
                   className="mt-6 h-3 rounded-full bg-slate-800"
@@ -188,55 +189,34 @@ function DashboardPage() {
 
         <div className="space-y-6 xl:col-span-5">
           <DashboardCard
-            title="Academic snapshot"
-            description="Performance indicators and learning momentum for the current period."
+            title="Intervention signals"
+            description="Behavior and follow-up indicators for the current period."
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricTile
-                label="Average GPA"
-                value={data.academicSnapshot.averageGpa}
-                detail="Cumulative grade point average across the active cohort."
+                label="Open interventions"
+                value={data.summary.openInterventions}
+                detail="Students currently in an active support plan."
                 accent="bg-indigo-50 text-indigo-700 ring-indigo-100"
               />
               <MetricTile
-                label="Assessments complete"
-                value={`${data.academicSnapshot.assessmentsCompleted}%`}
-                detail="Required assessments submitted on time."
+                label="Risk reviews"
+                value={data.summary.aiInsights}
+                detail="AI-reviewed cases that need counselor attention."
                 accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
               />
               <MetricTile
-                label="Assignments submitted"
-                value={`${data.academicSnapshot.assignmentsSubmitted}%`}
-                detail="On-time homework and classwork submission rate."
+                label="Attendance follow-up"
+                value={data.summary.followUpsDue}
+                detail="Attendance-related follow-up tasks due now."
                 accent="bg-sky-50 text-sky-700 ring-sky-100"
               />
               <MetricTile
-                label="Reading growth"
-                value={`${data.academicSnapshot.readingGrowth}%`}
-                detail="Average growth in reading proficiency."
-                accent="bg-amber-50 text-amber-700 ring-amber-100"
+                label="Escalations"
+                value={data.summary.escalations}
+                detail="Cases that need immediate admin review."
+                accent="bg-rose-50 text-rose-700 ring-rose-100"
               />
-            </div>
-
-            <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-                Top subjects
-              </h3>
-              <dl className="mt-4 space-y-3">
-                {data.academicSnapshot.topSubjects.map((subject) => (
-                  <div
-                    key={subject.subject}
-                    className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200"
-                  >
-                    <dt className="text-sm font-medium text-slate-700">
-                      {subject.subject}
-                    </dt>
-                    <dd className="text-sm font-semibold text-slate-950">
-                      {subject.score}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
             </div>
           </DashboardCard>
 
@@ -249,19 +229,6 @@ function DashboardPage() {
                 <ActionTile key={action.label} {...action} />
               ))}
             </div>
-          </DashboardCard>
-        </div>
-
-        <div className="xl:col-span-12">
-          <DashboardCard
-            title="Behavior log"
-            description="Most recent student behavior entries, follow-ups, and recognition notes."
-          >
-            <ul className="space-y-4" aria-label="Recent behavior log entries">
-              {data.behaviorLog.map((entry) => (
-                <BehaviorRow key={entry.id} {...entry} />
-              ))}
-            </ul>
           </DashboardCard>
         </div>
       </div>
