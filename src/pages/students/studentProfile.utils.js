@@ -29,6 +29,7 @@ export const STUDENT_PROFILE_TABS = [
 ];
 
 function formatDate(value) {
+  if (!value) return "N/A";
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -37,6 +38,7 @@ function formatDate(value) {
 }
 
 function getInitials(name) {
+  if (!name) return "??";
   return name
     .split(" ")
     .filter(Boolean)
@@ -47,72 +49,84 @@ function getInitials(name) {
 }
 
 function createTrendLabel(riskLevel, disciplineIncidents) {
-  if (disciplineIncidents >= 12 || riskLevel === "High") {
+  if (disciplineIncidents >= 5 || riskLevel === "High") {
     return "Immediate support needed";
   }
-
-  if (disciplineIncidents >= 5 || riskLevel === "Medium") {
+  if (disciplineIncidents >= 2 || riskLevel === "Medium") {
     return "Monitor closely";
   }
-
   return "On track";
 }
 
-export function buildStudentProfile(student) {
-  const disciplineIncidents = student.negativeBehaviors ?? 0;
-  const attendanceRate = Math.max(
-    82,
-    Math.min(
-      99,
-      98 - disciplineIncidents * 1.5 + (student.positiveBehaviors ?? 0) * 0.1,
-    ),
-  );
-  const gpa = Math.max(
-    1.8,
-    Math.min(
-      4,
-      3.85 -
-        disciplineIncidents * 0.08 +
-        (student.positiveBehaviors ?? 0) * 0.01,
-    ),
-  );
+/**
+ * Adapter utility to transform raw API responses into a unified student profile object for the UI
+ * @param {Object} student - Basic administrative data from GET /api/Students/{id}
+ * @param {Array} attendanceList - Attendance logs from GET /api/Students/{id}/attendance
+ * @param {Array} gradesList - Academic grades from GET /api/Students/{id}/grades
+ * @param {Array} behaviorList - Behavior incidents from GET /api/Students/{id}/behavior
+ */
+export function buildStudentProfile(
+  student,
+  attendanceList = [],
+  gradesList = [],
+  behaviorList = [],
+) {
+  if (!student) return null;
 
-  const recentIncidents = (student.behaviorHistory ?? []).map(
-    (incident, index) => ({
-      id: `${student.id}-incident-${index}`,
-      date: formatDate(incident.date),
-      title: incident.description,
-      category:
-        incident.behavior === "Negative"
-          ? "Discipline"
-          : "Positive reinforcement",
-      type: incident.behavior,
-    }),
+  // 1. Calculate Real Attendance Rate based on status (1 = Present, 0 = Absent)
+  const totalDays = attendanceList.length;
+  const presentDays = attendanceList.filter(
+    (record) => record.status === 1,
+  ).length;
+  const attendanceRate = totalDays > 0 ? (presentDays / totalDays) * 100 : 100;
+
+  // 2. Calculate Real Academic Average (Scores are out of 100 from backend)
+  const totalSubjects = gradesList.length;
+  const totalScores = gradesList.reduce(
+    (sum, item) => sum + (item.score || 0),
+    0,
   );
+  const academicAverage = totalSubjects > 0 ? totalScores / totalSubjects : 0;
+
+  // Keep GPA presentation happy by mapping average to a standard 4.0 scale roughly for the UI value
+  const simulatedGpa = totalSubjects > 0 ? (academicAverage / 100) * 4 : 4.0;
+
+  // 3. Process Behavior Incidents
+  const disciplineIncidents = behaviorList.length;
+  const recentIncidents = behaviorList.map((incident) => ({
+    id: `incident-${incident.incidentID}`,
+    date: formatDate(incident.occurredAt),
+    title: incident.detail || "No details provided",
+    category: `Reported by ${incident.source || "System"}`,
+    type: incident.reviewStatus === 1 ? "Negative" : "Pending Review", // Mapping status enum safely
+  }));
 
   return {
-    id: student.id,
-    name: student.name,
-    email: student.email,
+    id: student.studentID,
+    name: student.fullName,
+    email: `${student.fullName?.toLowerCase().replace(/\s+/g, ".")}@school.edu`, // Fallback elegant email generation
     grade: student.grade,
-    className: student.class,
-    initials: getInitials(student.name),
-    riskLevel: student.riskLevel,
-    enrollmentDate: formatDate(student.enrollmentDate),
+    className: `Section ${student.section || "N/A"}`,
+    initials: getInitials(student.fullName),
+    riskLevel: student.isActive ? "Low" : "High", // Temporary mapping until AI endpoint hooks up riskLevel
+    enrollmentDate: formatDate(`${student.academicYear}-09-01`), // Dynamic baseline fallback
     attendanceRate,
     attendanceDetail:
-      attendanceRate >= 95
+      attendanceRate >= 90
         ? "Excellent attendance with minimal absences."
-        : "Attendance is stable, with room to improve consistency.",
-    gpa,
+        : "Attendance is fluctuating, requiring consistency monitoring.",
+    gpa: simulatedGpa,
     gpaDetail:
-      gpa >= 3.5
-        ? "Strong academic standing and consistent output."
-        : "Grades are holding steady with a few areas to reinforce.",
+      academicAverage >= 85
+        ? `Strong academic standing with an average score of ${academicAverage.toFixed(1)}%.`
+        : `Grades are holding at ${academicAverage.toFixed(1)}% average. Needs targeted reinforcement.`,
     disciplineIncidents,
-    disciplineTrend: createTrendLabel(student.riskLevel, disciplineIncidents),
+    disciplineTrend: createTrendLabel(
+      student.isActive ? "Low" : "High",
+      disciplineIncidents,
+    ),
     recentIncidents,
-    notes: fallbackNotes,
+    notes: fallbackNotes, // Keeps current structure, will bind backend update/post dynamically next
     lastUpdated: formatDate(new Date()),
   };
 }

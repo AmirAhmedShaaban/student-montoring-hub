@@ -39,32 +39,32 @@ function StudentProfileHeader({ student }) {
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="sky">Grade {student.grade}</Badge>
+              <Badge tone="sky">Grade: {student.grade}</Badge>
               <Badge tone="green">{student.riskLevel} risk</Badge>
-              <Badge tone="slate">Homeroom {student.className}</Badge>
+              <Badge tone="slate">Homeroom: {student.className}</Badge>
             </div>
 
             <dl className="mt-5 grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
               <div>
-                <dt className="font-medium text-slate-500">Student ID</dt>
+                <dt className="font-medium text-slate-500">Student ID:</dt>
                 <dd className="mt-1 text-base font-medium text-slate-950">
                   {student.id}
                 </dd>
               </div>
               <div>
-                <dt className="font-medium text-slate-500">Email</dt>
+                <dt className="font-medium text-slate-500">Email:</dt>
                 <dd className="mt-1 break-all text-base font-medium text-slate-950">
                   {student.email}
                 </dd>
               </div>
               <div>
-                <dt className="font-medium text-slate-500">Enrollment date</dt>
+                <dt className="font-medium text-slate-500">Enrollment date:</dt>
                 <dd className="mt-1 text-base font-medium text-slate-950">
                   {student.enrollmentDate}
                 </dd>
               </div>
               <div>
-                <dt className="font-medium text-slate-500">Quick summary</dt>
+                <dt className="font-medium text-slate-500">Quick summary:</dt>
                 <dd className="mt-1 text-base font-medium text-slate-950">
                   Current support plan with active monitoring.
                 </dd>
@@ -74,12 +74,13 @@ function StudentProfileHeader({ student }) {
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-          <p className="text-sm font-medium text-slate-500">Focus area</p>
+          <p className="text-sm font-medium text-slate-500">Focus area:</p>
           <p className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
             {student.riskLevel} support
           </p>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Use the behavior and notes tabs to track interventions, family follow-up, and progress.
+            Use the behavior and notes tabs to track interventions, family
+            follow-up, and progress.
           </p>
         </div>
       </div>
