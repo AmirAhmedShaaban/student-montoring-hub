@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useDashboardMockData } from "../../mocks/dashboard.mock";
 
 import {
-  getAllStudents,
+  // getAllStudents,
   getStudentById,
   getStudentAttendance,
   getStudentGrades,

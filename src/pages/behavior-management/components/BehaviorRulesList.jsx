@@ -1,25 +1,30 @@
 import BehaviorRuleCard from "./BehaviorRuleCard";
 
-function BehaviorRulesList({ rules, selectedRuleId, onSelectRule }) {
-  if (!rules.length) {
+function BehaviorRulesList({
+  rules,
+  selectedRuleId,
+  onSelectRule,
+  onToggleStatus,
+  onDeleteRule,
+}) {
+  if (rules.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 p-8 text-center shadow-sm">
-        <p className="text-base font-semibold text-slate-950">No rules found</p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Try a different search term or create a new behavior rule.
-        </p>
-      </div>
+      <p className="py-8 text-center text-sm text-slate-400">
+        No rules match your search.
+      </p>
     );
   }
 
   return (
-    <ul className="space-y-4" aria-label="Behavior rules list">
+    <ul className="space-y-3">
       {rules.map((rule) => (
         <BehaviorRuleCard
           key={rule.id}
           rule={rule}
           active={rule.id === selectedRuleId}
           onSelect={onSelectRule}
+          onToggle={onToggleStatus}
+          onDelete={onDeleteRule}
         />
       ))}
     </ul>

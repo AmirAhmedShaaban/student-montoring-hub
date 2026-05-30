@@ -7,9 +7,24 @@ function BehaviorRuleForm({
   severityOptions,
   onChange,
   onSubmit,
+  onToggleStatus,
+  saving = false,
 }) {
   const handleChange = (field) => (event) => {
     onChange({ ...value, [field]: event.target.value });
+  };
+
+  /**
+   * Toggle changes go through onToggleStatus (if provided) so the parent
+   * can fire the dedicated PATCH endpoint immediately. Falls back to a
+   * plain onChange if no onToggleStatus is given.
+   */
+  const handleToggleChange = (checked) => {
+    if (onToggleStatus) {
+      onToggleStatus(checked);
+    } else {
+      onChange({ ...value, isActive: checked });
+    }
   };
 
   return (
@@ -90,7 +105,7 @@ function BehaviorRuleForm({
           id="rule-status"
           label="Active status"
           checked={value.isActive}
-          onChange={(checked) => onChange({ ...value, isActive: checked })}
+          onChange={handleToggleChange}
           hint="Inactive rules stay saved but do not appear in active interventions."
         />
       </div>
@@ -117,7 +132,7 @@ function BehaviorRuleForm({
       <BehaviorFormField
         id="rule-consequences"
         label="Consequences"
-        hint="Add the expected response, intervention, or follow-up action."
+        hint="Add the expected response, intervention, or follow-up action (stored locally, not sent to the server)."
       >
         {({ describedBy }) => (
           <textarea
@@ -137,11 +152,13 @@ function BehaviorRuleForm({
         <p className="text-sm leading-6 text-slate-500">
           Keep the form tight and specific so staff can apply it consistently.
         </p>
+
         <button
           type="submit"
-          className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          disabled={saving}
+          className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Save rule
+          {saving ? "Saving…" : "Save rule"}
         </button>
       </div>
     </form>
