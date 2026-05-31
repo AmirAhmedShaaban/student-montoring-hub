@@ -9,7 +9,7 @@ export function DashboardCard({
 }) {
   return (
     <section
-      className={`rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ${className}`}
+      className={`rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md ${className}`}
     >
       <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -32,9 +32,13 @@ export function MetricTile({
   value,
   detail,
   accent = "bg-sky-50 text-sky-700 ring-sky-100",
+  onClick,
 }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+    <article
+      onClick={onClick}
+      className={`rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-all duration-300 ${onClick ? "cursor-pointer hover:scale-105 hover:border-sky-300 hover:shadow-sm active:scale-95" : ""}`}
+    >
       <div
         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${accent}`}
       >
@@ -71,10 +75,10 @@ export function ProgressRow({ label, value, detail, accent = "bg-sky-500" }) {
 export function ActionTile({ title, description, href }) {
   return (
     <Link
-      to={href}
-      className="group block rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+      to={href || "#"}
+      className="group block rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-all duration-300 hover:border-sky-200 hover:bg-sky-50 hover:shadow-sm active:scale-95 focus:outline-none focus:visible:ring-2 focus:visible:ring-sky-500"
     >
-      <h3 className="font-semibold text-slate-950 group-hover:text-sky-800">
+      <h3 className="font-semibold text-slate-950 group-hover:text-sky-800 transition-colors">
         {title}
       </h3>
       <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
@@ -92,13 +96,13 @@ export function BehaviorRow({ student, type, detail, time }) {
     : "bg-amber-50 text-amber-700 ring-amber-100";
 
   return (
-    <li className="flex gap-4 rounded-2xl border border-slate-200 p-4">
+    <li className="flex gap-4 rounded-2xl border border-slate-200 p-4 transition-all hover:bg-slate-50">
       <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-white">
         {student
-          .split(" ")
+          ?.split(" ")
           .map((part) => part[0])
           .slice(0, 2)
-          .join("")}
+          .join("") || "???"}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

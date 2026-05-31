@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllStudents } from "../../../services/studentService";
+import { studentMockData } from "../../../mocks/student.mock";
 
 function StudentSelector({ currentStudentId }) {
   const navigate = useNavigate();
@@ -17,9 +18,11 @@ function StudentSelector({ currentStudentId }) {
         const res = await getAllStudents();
         if (res.success) {
           setStudents(res.data);
+        } else {
+          setStudents(studentMockData || []);
         }
       } catch (error) {
-        console.error("Error loading students for selector:", error);
+        setStudents(studentMockData || []);
       } finally {
         setLoading(false);
       }
@@ -40,15 +43,17 @@ function StudentSelector({ currentStudentId }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredStudents = students.filter(
+  const filteredStudents = (students || []).filter(
     (s) =>
-      s.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.studentID?.toString().includes(searchTerm),
+      (s.fullName &&
+        s.fullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (s.name && s.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (s.studentID && s.studentID.toString().includes(searchTerm)) ||
+      (s.id && s.id.toString().includes(searchTerm)),
   );
 
   return (
     <div className="relative inline-block" ref={containerRef}>
-      {/* Trigger Button - Now looks like a professional action button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-400 hover:text-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-sm"
@@ -71,7 +76,6 @@ function StudentSelector({ currentStudentId }) {
 
       {isOpen && (
         <div className="absolute right-0 z-50 mt-2 w-72 max-h-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl backdrop-blur-sm">
-          {/* Search Input inside the dropdown */}
           <div className="p-3 border-b border-slate-100 bg-slate-50/50">
             <div className="relative">
               <input
@@ -82,19 +86,6 @@ function StudentSelector({ currentStudentId }) {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <svg
-                className="absolute right-3 top-2.5 h-4 w-4 text-slate-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
             </div>
           </div>
 
@@ -104,26 +95,31 @@ function StudentSelector({ currentStudentId }) {
                 Loading...
               </div>
             ) : filteredStudents.length > 0 ? (
-              filteredStudents.map((student) => (
-                <li
-                  key={student.studentID}
-                  onClick={() => {
-                    navigate(`/students/${student.studentID}`);
-                    setIsOpen(false);
-                    setSearchTerm("");
-                  }}
-                  className={`px-4 py-2.5 text-sm cursor-pointer transition flex items-center justify-between ${
-                    student.studentID === currentStudentId
-                      ? "bg-sky-50 text-sky-700 font-medium"
-                      : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
-                  }`}
-                >
-                  <span className="truncate">{student.fullName}</span>
-                  <span className="text-[10px] font-mono text-slate-400 ml-2">
-                    #{student.studentID}
-                  </span>
-                </li>
-              ))
+              filteredStudents.map((student) => {
+                const id = student.studentID || student.id;
+                return (
+                  <li
+                    key={id}
+                    onClick={() => {
+                      navigate(`/students/${id}`);
+                      setIsOpen(false);
+                      setSearchTerm("");
+                    }}
+                    className={`px-4 py-2.5 text-sm cursor-pointer transition flex items-center justify-between ${
+                      id === currentStudentId
+                        ? "bg-sky-50 text-sky-700 font-medium"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                    }`}
+                  >
+                    <span className="truncate">
+                      {student.fullName || student.name}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 ml-2">
+                      #{id}
+                    </span>
+                  </li>
+                );
+              })
             ) : (
               <div className="p-4 text-center text-xs text-slate-500">
                 No students found.

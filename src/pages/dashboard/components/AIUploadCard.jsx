@@ -48,7 +48,6 @@ export default function AIUploadCard() {
       setStatus(nextStatus);
       setProgress(nextProgress);
     }, delay);
-
     timerRefs.current.push(timerId);
   };
 
@@ -57,73 +56,51 @@ export default function AIUploadCard() {
       setStatus("failed");
       return;
     }
-
     clearTimers();
-
     const nextResult = createMockAnalysisResponse(file);
-
     setSelectedFile(file);
     setStatus("uploading");
     setProgress(12);
-
     queueState(450, "processing", 48);
-
     const completionTimer = setTimeout(() => {
       setStatus("completed");
       setProgress(100);
       applyMockAnalysisResult(nextResult);
     }, 1550);
-
     timerRefs.current.push(completionTimer);
   };
 
   const handleFileSelection = (event) => {
     const file = event.target.files?.[0];
-
-    if (file) {
-      startUploadSimulation(file);
-    }
-
+    if (file) startUploadSimulation(file);
     event.target.value = "";
   };
 
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
+  const openFilePicker = () => fileInputRef.current?.click();
 
   const handleDrop = (event) => {
     event.preventDefault();
     setIsDragging(false);
-
     const file = event.dataTransfer.files?.[0];
-
-    if (file) {
-      startUploadSimulation(file);
-    }
+    if (file) startUploadSimulation(file);
   };
 
   const handleUploadClick = () => {
-    if (status === "processing") {
-      return;
-    }
-
+    if (status === "processing") return;
     if (selectedFile && status === "completed") {
       startUploadSimulation(selectedFile);
       return;
     }
-
     openFilePicker();
   };
 
-  const isBusy =
-    status === "uploading" || status === "processing";
+  const isBusy = status === "uploading" || status === "processing";
   const buttonLabel =
     status === "idle"
       ? "Upload video"
       : status === "completed"
         ? "Upload again"
         : "Processing";
-
   const statusLabel =
     status === "uploading"
       ? "Uploading..."
@@ -136,7 +113,7 @@ export default function AIUploadCard() {
             : "Ready to upload";
 
   return (
-    <section className="rounded-[1.6rem] border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-3 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.32)] sm:p-4 lg:p-4">
+    <section className="relative overflow-hidden rounded-[1.6rem] border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-3 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.32)] sm:p-4 lg:p-4">
       <input
         ref={fileInputRef}
         type="file"
@@ -191,7 +168,6 @@ export default function AIUploadCard() {
             <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-white shadow-sm ring-1 ring-slate-200 transition duration-300 group-hover:-translate-y-0.5 group-hover:scale-[1.01]">
               <UploadIcon />
             </div>
-
             <p className="mt-2.5 max-w-xl text-sm leading-5 text-slate-700 sm:text-[0.9rem]">
               Drag and drop classroom media here, or{" "}
               <span className="font-semibold text-sky-700">browse files</span>
@@ -251,6 +227,10 @@ export default function AIUploadCard() {
           </div>
         </div>
       </div>
+
+      {/* Adding a simulated scanning effect decoration */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 blur-3xl rounded-full -mr-16 -mt-16" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full -ml-16 -mb-16" />
     </section>
   );
 }

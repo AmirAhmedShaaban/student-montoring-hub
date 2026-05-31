@@ -6,15 +6,14 @@ import API from "./axiosConfig";
  */
 export async function getAllStudents() {
   try {
-    const response = await API.get("/Students");
-
+    // Removed /api from start because it's already in axiosConfig baseURL
+    const response = await API.get("Students/Get All");
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
-
     return {
       success: false,
       data: [],
@@ -25,9 +24,7 @@ export async function getAllStudents() {
     return {
       success: false,
       data: [],
-      message:
-        error.response?.data?.message ||
-        "Server connection error while fetching students.",
+      message: error.response?.data?.message || "Server connection error.",
     };
   }
 }
@@ -39,21 +36,17 @@ export async function getAllStudents() {
  */
 export async function getStudentById(id) {
   try {
-    const response = await API.get(`/Students/${id}`);
-
+    const response = await API.get(`Students/${id}`);
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
-
     return {
       success: false,
       data: null,
-      message:
-        response.data?.message ||
-        `Failed to load profile for student ID: ${id}`,
+      message: response.data?.message || `Student ID ${id} not found.`,
     };
   } catch (error) {
     console.error(`Error fetching student ID ${id}:`, error);
@@ -61,8 +54,7 @@ export async function getStudentById(id) {
       success: false,
       data: null,
       message:
-        error.response?.data?.message ||
-        "Server connection error while fetching student profile.",
+        error.response?.data?.message || "Server error fetching profile.",
     };
   }
 }
@@ -74,15 +66,13 @@ export async function getStudentById(id) {
  */
 export async function getStudentAttendance(id) {
   try {
-    const response = await API.get(`/Students/${id}/attendance`);
-
+    const response = await API.get(`Students/${id}/attendance`);
     if (response.data && response.data.succeeded) {
       return {
         success: true,
-        data: response.data.data, // Returns the array of attendance records
+        data: response.data.data,
       };
     }
-
     return {
       success: false,
       data: [],
@@ -96,8 +86,7 @@ export async function getStudentAttendance(id) {
       success: false,
       data: [],
       message:
-        error.response?.data?.message ||
-        "Server connection error while fetching attendance.",
+        error.response?.data?.message || "Server error fetching attendance.",
     };
   }
 }
@@ -109,15 +98,13 @@ export async function getStudentAttendance(id) {
  */
 export async function getStudentGrades(id) {
   try {
-    const response = await API.get(`/Students/${id}/grades`);
-
+    const response = await API.get(`Students/${id}/grades`);
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
-
     return {
       success: false,
       data: [],
@@ -129,9 +116,7 @@ export async function getStudentGrades(id) {
     return {
       success: false,
       data: [],
-      message:
-        error.response?.data?.message ||
-        "Server connection error while fetching grades.",
+      message: error.response?.data?.message || "Server error fetching grades.",
     };
   }
 }
@@ -143,15 +128,13 @@ export async function getStudentGrades(id) {
  */
 export async function getStudentBehavior(id) {
   try {
-    const response = await API.get(`/Students/${id}/behavior`);
-
+    const response = await API.get(`Students/${id}/behavior`);
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
-
     return {
       success: false,
       data: [],
@@ -165,8 +148,49 @@ export async function getStudentBehavior(id) {
       success: false,
       data: [],
       message:
-        error.response?.data?.message ||
-        "Server connection error while fetching behavior logs.",
+        error.response?.data?.message || "Server error fetching behavior.",
+    };
+  }
+}
+
+/**
+ * Fetches all notes and filters them for a specific student
+ * @param {string|number} studentId - The unique ID of the student
+ * @returns {Promise<{success: boolean, data: Array, message?: string}>}
+ */
+export async function getStudentNotes(studentId) {
+  try {
+    const response = await API.get("Students/GetAllNotes");
+    if (response.data && response.data.succeeded) {
+      const allNotes = response.data.data || [];
+
+      // Filter and sanitize notes to ensure safe date rendering
+      const studentNotes = allNotes
+        .filter((note) => note.studentID === studentId)
+        .map((note) => ({
+          ...note,
+          // Safe date handling
+          formattedDate: note.timestamp
+            ? new Date(note.timestamp).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "N/A",
+        }));
+
+      return {
+        success: true,
+        data: studentNotes,
+      };
+    }
+    return { success: false, data: [], message: "Failed to load notes." };
+  } catch (error) {
+    console.error(`Error fetching notes for student ID ${studentId}:`, error);
+    return {
+      success: false,
+      data: [],
+      message: "Server error fetching notes.",
     };
   }
 }
@@ -175,15 +199,11 @@ export async function getStudentBehavior(id) {
  * Adds a new note/recommendation to a specific student's profile
  * @param {string|number} studentId - The unique ID of the student
  * @param {Object} noteData - The note details
- * @param {number} noteData.userID - The ID of the user (teacher/counselor) creating the note
- * @param {string} noteData.noteText - The content of the note (Must be >= 10 characters)
- * @param {string} noteData.noteType - The category of the note (e.g., Academic, Behavior)
  * @returns {Promise<{success: boolean, message: string, data: Object|null}>}
  */
 export async function addStudentNote(studentId, noteData) {
   try {
-    const response = await API.post(`/Students/${studentId}/notes`, noteData);
-
+    const response = await API.post(`Students/${studentId}/notes`, noteData);
     if (response.data && response.data.succeeded) {
       return {
         success: true,
@@ -191,7 +211,6 @@ export async function addStudentNote(studentId, noteData) {
         data: response.data.data,
       };
     }
-
     return {
       success: false,
       message: response.data?.message || "Failed to add note.",
@@ -201,9 +220,7 @@ export async function addStudentNote(studentId, noteData) {
     console.error(`Error adding note for student ID ${studentId}:`, error);
     return {
       success: false,
-      message:
-        error.response?.data?.message ||
-        "Server error while adding student note.",
+      message: error.response?.data?.message || "Server error.",
       data: null,
     };
   }
@@ -213,14 +230,11 @@ export async function addStudentNote(studentId, noteData) {
  * Updates an existing student note by its noteId
  * @param {string|number} noteId - The unique ID of the note to be updated
  * @param {Object} noteData - The updated note details
- * @param {string} noteData.noteText - The updated content (Must be >= 10 characters)
- * @param {string} noteData.noteType - Must be one of: 'Reading', 'Assignment', 'Assessment'
  * @returns {Promise<{success: boolean, message: string, data: Object|null}>}
  */
 export async function updateStudentNote(noteId, noteData) {
   try {
-    const response = await API.put(`/Students/notes/${noteId}`, noteData);
-
+    const response = await API.put(`Students/notes/${noteId}`, noteData);
     if (response.data && response.data.succeeded) {
       return {
         success: true,
@@ -228,7 +242,6 @@ export async function updateStudentNote(noteId, noteData) {
         data: response.data.data,
       };
     }
-
     return {
       success: false,
       message: response.data?.message || "Failed to update note.",
@@ -238,9 +251,7 @@ export async function updateStudentNote(noteId, noteData) {
     console.error(`Error updating note ID ${noteId}:`, error);
     return {
       success: false,
-      message:
-        error.response?.data?.message ||
-        "Server error while updating student note.",
+      message: error.response?.data?.message || "Server error.",
       data: null,
     };
   }

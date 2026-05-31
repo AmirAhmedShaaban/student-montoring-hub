@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useDashboardMockData } from "../../mocks/dashboard.mock";
-
 import {
-  // getAllStudents,
   getStudentById,
   getStudentAttendance,
   getStudentGrades,
   getStudentBehavior,
+  getStudentNotes,
   addStudentNote,
 } from "../../services/studentService";
-
 import AddNoteForm from "./components/AddNoteForm";
 import DisciplineIncidentsCard from "./components/DisciplineIncidentsCard";
 import NotesPanel from "./components/NotesPanel";
@@ -20,15 +18,14 @@ import StudentProfileHeader from "./components/StudentProfileHeader";
 import StudentTabs from "./components/StudentTabs";
 import {
   buildStudentProfile,
-  NOTES_CATEGORIES,
   STUDENT_PROFILE_TABS,
 } from "./studentProfile.utils";
 
 function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
   const [activeTab, setActiveTab] = useState(STUDENT_PROFILE_TABS[0].id);
-  const [notes, setNotes] = useState(profile.notes);
+  const [notes, setNotes] = useState(profile.notes || []);
   const [draftNote, setDraftNote] = useState({
-    category: "Assessment", // Defaulting to an allowed enum option from the backend
+    category: "Assessment",
     text: "",
   });
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -37,10 +34,8 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
   const handleAddNote = async (event) => {
     event.preventDefault();
     setNoteError("");
-
     const trimmedText = draftNote.text.trim();
 
-    // Frontend pre-check according to backend rules (min 10 characters)
     if (trimmedText.length < 10) {
       setNoteError("Note text must be at least 10 characters.");
       return;
@@ -48,8 +43,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
 
     try {
       setIsSubmittingNote(true);
-
-      // Hardcoded placeholder userID: 1 (representing the active teacher/counselor session)
       const notePayload = {
         userID: 1,
         noteText: trimmedText,
@@ -59,27 +52,19 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
       const result = await addStudentNote(studentId, notePayload);
 
       if (result.success) {
-        // Optimistically updating UI local view or pushing backend-returned object structure
-        setNotes((currentNotes) => [
-          {
-            id: result.data?.noteID || `note-${Date.now()}`,
-            author: "Current Staff",
-            category: draftNote.category,
-            text: trimmedText,
-            timestamp: new Date(),
-          },
-          ...currentNotes,
-        ]);
-
-        setDraftNote({
-          category: "Assessment",
-          text: "",
-        });
+        const newNote = {
+          id: result.data?.noteID || `note-${Date.now()}`,
+          author: "Current Staff",
+          category: draftNote.category,
+          text: trimmedText,
+          timestamp: new Date(),
+        };
+        setNotes((prev) => [newNote, ...prev]);
+        setDraftNote({ category: "Assessment", text: "" });
       } else {
         setNoteError(result.message);
       }
     } catch (err) {
-      console.log(err);
       setNoteError("Something went wrong while saving the note.");
     } finally {
       setIsSubmittingNote(false);
@@ -89,7 +74,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
   const activeTabLabel =
     STUDENT_PROFILE_TABS.find((tab) => tab.id === activeTab)?.label ??
     STUDENT_PROFILE_TABS[0].label;
-
   const panelId = `student-panel-${activeTab}`;
   const tabId = `student-tab-${activeTab}`;
 
@@ -112,7 +96,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
                 accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
               />
             </div>
-
             <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
               <h2 className="text-lg font-semibold text-slate-950">
                 Quick profile
@@ -139,7 +122,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
               </dl>
             </section>
           </div>
-
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
             <h2 className="text-lg font-semibold text-slate-950">
               Latest AI analysis
@@ -147,7 +129,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
             <p className="mt-1 text-sm leading-6 text-slate-600">
               Shared result from the latest uploaded media.
             </p>
-
             <dl className="mt-5 space-y-4 text-sm">
               <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
                 <dt className="text-slate-500">Classification</dt>
@@ -194,7 +175,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
             trend={profile.disciplineTrend}
             lastIncident={profile.recentIncidents[0]}
           />
-
           <RecentIncidentsList incidents={profile.recentIncidents} />
         </div>
       );
@@ -203,11 +183,10 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
     return (
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
         <NotesPanel notes={notes} />
-
         <div>
           <AddNoteForm
             value={draftNote}
-            categories={["Reading", "Assignment", "Assessment"]} // Strict allowed backend enums
+            categories={["Reading", "Assignment", "Assessment"]}
             onChange={setDraftNote}
             onSubmit={handleAddNote}
             disabled={isSubmittingNote}
@@ -225,7 +204,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
       <StudentProfileHeader student={profile} />
-
       <section className="rounded-4xl border border-slate-200 bg-white/80 p-2 shadow-sm backdrop-blur">
         <StudentTabs
           tabs={STUDENT_PROFILE_TABS}
@@ -233,7 +211,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
           onChange={setActiveTab}
           activeLabel={activeTabLabel}
         />
-
         <div className="p-4 sm:p-6">
           <div
             id={panelId}
@@ -253,8 +230,6 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
 function StudentProfilePage() {
   const { id } = useParams();
   const dashboardData = useDashboardMockData();
-
-  // Unified status management for multiple resource requests
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -264,26 +239,25 @@ function StudentProfilePage() {
       try {
         setLoading(true);
         setError("");
-
-        // Dynamic profile resolution fallback logic to studentID = 1 if none matched
         const targetId = id ? Number(id) : 1;
 
-        // Fetching all student parameters simultaneously for seamless layout updates
-        const [studentRes, attendanceRes, gradesRes, behaviorRes] =
+        const [studentRes, attendanceRes, gradesRes, behaviorRes, notesRes] =
           await Promise.all([
             getStudentById(targetId),
             getStudentAttendance(targetId),
             getStudentGrades(targetId),
             getStudentBehavior(targetId),
+            getStudentNotes(targetId),
           ]);
 
         if (studentRes.success) {
           const transformedProfile = buildStudentProfile(
             studentRes.data,
-            attendanceRes.data,
-            gradesRes.data,
-            behaviorRes.data,
+            attendanceRes.data || [],
+            gradesRes.data || [],
+            behaviorRes.data || [],
           );
+          transformedProfile.notes = notesRes.success ? notesRes.data : [];
           setProfileData(transformedProfile);
         } else {
           setError(
@@ -291,13 +265,11 @@ function StudentProfilePage() {
           );
         }
       } catch (err) {
-        console.error("Critical error building profile workspace:", err);
         setError("An unexpected error occurred while loading profile data.");
       } finally {
         setLoading(false);
       }
     }
-
     fetchFullProfile();
   }, [id]);
 
@@ -305,7 +277,7 @@ function StudentProfilePage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600 mx-auto"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600 mx-auto" />
           <p className="text-sm font-medium text-slate-600 animate-pulse">
             Assembling profile intelligence view...
           </p>

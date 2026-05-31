@@ -5,12 +5,7 @@ import {
   deleteProfilePicture,
 } from "../../../services/settingsService";
 
-function ProfilePictureSection({
-  userId,
-  currentPicture,
-  userName,
-  onPictureUpdated,
-}) {
+function ProfilePictureSection({ currentPicture, userName, onPictureUpdated }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -18,7 +13,7 @@ function ProfilePictureSection({
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
-    if (!file || !userId) return;
+    if (!file) return;
 
     setUploading(true);
     setMessage(null);
@@ -26,30 +21,28 @@ function ProfilePictureSection({
     const formData = new FormData();
     formData.append("Picture", file);
 
-    const res = await uploadProfilePicture(userId, formData);
+    const res = await uploadProfilePicture(formData);
 
     if (res.success) {
-      onPictureUpdated(
-        res.data?.profilePicture ?? res.data?.url ?? currentPicture,
-      );
-      setMessage({ type: "success", text: "Picture updated." });
+      // Instead of passing a URL, we trigger a profile refresh in the parent
+      onPictureUpdated();
+      setMessage({ type: "success", text: "Picture updated successfully." });
     } else {
       setMessage({ type: "error", text: res.message || "Upload failed." });
     }
 
     setUploading(false);
-    // Clear input so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemove = async () => {
-    if (!userId) return;
     setRemoving(true);
     setMessage(null);
 
-    const res = await deleteProfilePicture(userId);
+    const res = await deleteProfilePicture();
+
     if (res.success) {
-      onPictureUpdated(null);
+      onPictureUpdated(); // Trigger refresh to remove image from UI
       setMessage({ type: "success", text: "Picture removed." });
     } else {
       setMessage({
@@ -78,7 +71,6 @@ function ProfilePictureSection({
       />
 
       <div className="pt-5 flex flex-col sm:flex-row items-start gap-5">
-        {/* Avatar */}
         <div className="shrink-0">
           {currentPicture ? (
             <img
@@ -93,7 +85,6 @@ function ProfilePictureSection({
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex-1 space-y-3">
           <div className="flex flex-wrap gap-3">
             <input

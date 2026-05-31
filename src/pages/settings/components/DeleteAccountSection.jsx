@@ -4,18 +4,18 @@ import { Button, Card, SectionHeader } from "./SettingsUI";
 import { deleteAccount } from "../../../services/settingsService";
 import { logout } from "../../../services/authService";
 
-function DeleteAccountSection({ userId }) {
+function DeleteAccountSection() {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState(null);
 
   const handleDelete = async () => {
-    if (!userId) return;
     setDeleting(true);
     setMessage(null);
 
-    const res = await deleteAccount(userId);
+    const res = await deleteAccount();
+
     if (res.success) {
       await logout();
       navigate("/login", { replace: true });
@@ -26,6 +26,7 @@ function DeleteAccountSection({ userId }) {
       });
       setShowConfirm(false);
     }
+
     setDeleting(false);
   };
 

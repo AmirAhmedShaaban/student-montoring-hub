@@ -5,13 +5,12 @@ import API from "./axiosConfig";
 /*  Admin Profile                                                      */
 /* ------------------------------------------------------------------ */
 
-export async function getAdminProfile(userId) {
+export async function getAdminProfile() {
   try {
-    const response = await API.get(`/Setting/admin-profile/${userId}`);
+    const response = await API.get("/Setting/admin-profile");
     if (response.data && response.data.succeeded) {
       return { success: true, data: response.data.data };
     }
-
     const status = response.status;
     const msg = response.data?.message || "";
     if (status === 404 || msg === "User not found") {
@@ -22,7 +21,6 @@ export async function getAdminProfile(userId) {
           "Your account profile is not available yet. Please contact the system administrator.",
       };
     }
-
     return {
       success: false,
       data: null,
@@ -31,7 +29,6 @@ export async function getAdminProfile(userId) {
   } catch (error) {
     const status = error.response?.status;
     const msg = error.response?.data?.message || "";
-
     if (status === 404 || msg === "User not found") {
       return {
         success: false,
@@ -40,7 +37,6 @@ export async function getAdminProfile(userId) {
           "Your account profile is not available yet. Please contact the system administrator.",
       };
     }
-
     return {
       success: false,
       data: null,
@@ -49,9 +45,15 @@ export async function getAdminProfile(userId) {
   }
 }
 
-export async function updateAdminProfile(userId, payload) {
+export async function updateAdminProfile(payload) {
   try {
-    const response = await API.put(`/Setting/admin-profile/${userId}`, payload);
+    // To solve 415 Unsupported Media Type, we explicitly set the Content-Type header
+    const response = await API.put("/Setting/admin-profile", payload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
     if (response.data && response.data.succeeded) {
       return {
         success: true,
@@ -76,12 +78,10 @@ export async function updateAdminProfile(userId, payload) {
 /*  Password                                                           */
 /* ------------------------------------------------------------------ */
 
-export async function changeUserPassword(userId, payload) {
+export async function changeUserPassword(payload) {
   try {
-    const response = await API.post(
-      `/Setting/change-password/${userId}`,
-      payload,
-    );
+    const response = await API.post("/Setting/change-password", payload);
+
     if (response.data && response.data.succeeded) {
       return { success: true, message: response.data.message };
     }
@@ -102,15 +102,11 @@ export async function changeUserPassword(userId, payload) {
 /*  Profile Picture                                                    */
 /* ------------------------------------------------------------------ */
 
-export async function uploadProfilePicture(userId, formData) {
+export async function uploadProfilePicture(formData) {
   try {
-    // Use the correct token key from axiosConfig.js
     const token = localStorage.getItem("student-behavior-dashboard-token");
-
-    // Use base 'axios' to avoid the default 'application/json' header from the API instance.
-    // This allows the browser to automatically set 'multipart/form-data' with the correct boundary.
     const response = await axios.post(
-      `http://studentmonitor.runasp.net/api/Setting/profile-picture/${userId}`,
+      `http://studentmonitor.runasp.net/api/Setting/profile-picture`,
       formData,
       {
         headers: {
@@ -118,7 +114,6 @@ export async function uploadProfilePicture(userId, formData) {
         },
       },
     );
-
     if (response.data && response.data.succeeded) {
       return {
         success: true,
@@ -139,9 +134,9 @@ export async function uploadProfilePicture(userId, formData) {
   }
 }
 
-export async function deleteProfilePicture(userId) {
+export async function deleteProfilePicture() {
   try {
-    const response = await API.delete(`/Setting/profile-picture/${userId}`);
+    const response = await API.delete("/Setting/profile-picture");
     if (response.data && response.data.succeeded) {
       return { success: true, message: response.data.message };
     }
@@ -162,9 +157,10 @@ export async function deleteProfilePicture(userId) {
 /*  Account                                                            */
 /* ------------------------------------------------------------------ */
 
-export async function deleteAccount(id) {
+export async function deleteAccount() {
   try {
-    const response = await API.delete(`/Setting/account/${id}`);
+    const response = await API.delete("/Setting/account");
+
     if (response.data && response.data.succeeded) {
       return { success: true, message: response.data.message };
     }

@@ -15,15 +15,11 @@ import {
 
 function ProfileInfoSection({
   profile,
-  userId,
+  userId, // Keep it for now if it's passed, but we won't use it in the API call
   languageOptions,
   resolveLanguageValue,
   onProfileUpdated,
 }) {
-  // Fix: Removed unused useId calls
-
-  // Fix: Initialize state directly from props.
-  // Because we use a 'key' in the parent, this component remounts when profile changes.
   const [formData, setFormData] = useState({
     fullname: profile?.fullname || profile?.fullName || "",
     email: profile?.email || "",
@@ -51,34 +47,44 @@ function ProfileInfoSection({
     setSaving(true);
     setMessage(null);
 
+    // FIX 1: Match the Backend DTO exactly (fullName with capital N)
     const payload = {
-      fullname: formData.fullname.trim(),
+      fullName: formData.fullname.trim(),
       language: formData.language,
       emailNotificationsEnabled: formData.emailNotificationsEnabled,
       pushNotificationsEnabled: formData.pushNotificationsEnabled,
     };
 
-    const res = await updateAdminProfile(userId, payload);
+    try {
+      // FIX 2: Pass ONLY the payload.
+      // The service now expects one argument, not (userId, payload).
+      const res = await updateAdminProfile(payload);
 
-    if (res.success) {
-      const newName = formData.fullname.trim();
+      if (res.success) {
+        const newName = formData.fullname.trim();
 
-      if (res.data) {
-        onProfileUpdated(res.data);
+        if (res.data) {
+          onProfileUpdated(res.data);
+        }
+
+        updateProfile({ name: newName });
+        refreshSession();
+
+        setMessage({ type: "success", text: res.message || "Profile saved." });
+      } else {
+        setMessage({
+          type: "error",
+          text: res.message || "Failed to save profile.",
+        });
       }
-
-      updateProfile({ name: newName });
-      refreshSession();
-
-      setMessage({ type: "success", text: res.message || "Profile saved." });
-    } else {
+    } catch (error) {
       setMessage({
         type: "error",
-        text: res.message || "Failed to save profile.",
+        text: "An unexpected error occurred.",
       });
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   };
 
   return (

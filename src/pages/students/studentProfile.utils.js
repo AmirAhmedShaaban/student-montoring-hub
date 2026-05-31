@@ -28,13 +28,27 @@ export const STUDENT_PROFILE_TABS = [
   { id: "notes", label: "Notes" },
 ];
 
-function formatDate(value) {
+/**
+ * Safely formats any date value (String or Date object) to a readable format.
+ * Prevents "toLocaleDateString of undefined" crashes.
+ */
+export function formatDate(value) {
   if (!value) return "N/A";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
+
+  try {
+    const date = new Date(value);
+    // Check if the date object is valid
+    if (isNaN(date.getTime())) {
+      return "Invalid Date";
+    }
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(date);
+  } catch (error) {
+    return "N/A";
+  }
 }
 
 function getInitials(name) {
@@ -88,7 +102,7 @@ export function buildStudentProfile(
   );
   const academicAverage = totalSubjects > 0 ? totalScores / totalSubjects : 0;
 
-  // Keep GPA presentation happy by mapping average to a standard 4.0 scale roughly for the UI value
+  // Map average to a standard 4.0 scale for UI consistency
   const simulatedGpa = totalSubjects > 0 ? (academicAverage / 100) * 4 : 4.0;
 
   // 3. Process Behavior Incidents
@@ -98,18 +112,18 @@ export function buildStudentProfile(
     date: formatDate(incident.occurredAt),
     title: incident.detail || "No details provided",
     category: `Reported by ${incident.source || "System"}`,
-    type: incident.reviewStatus === 1 ? "Negative" : "Pending Review", // Mapping status enum safely
+    type: incident.reviewStatus === 1 ? "Negative" : "Pending Review",
   }));
 
   return {
     id: student.studentID,
     name: student.fullName,
-    email: `${student.fullName?.toLowerCase().replace(/\s+/g, ".")}@school.edu`, // Fallback elegant email generation
+    email: `${student.fullName?.toLowerCase().replace(/\s+/g, ".")}@school.edu`,
     grade: student.grade,
     className: `Section ${student.section || "N/A"}`,
     initials: getInitials(student.fullName),
-    riskLevel: student.isActive ? "Low" : "High", // Temporary mapping until AI endpoint hooks up riskLevel
-    enrollmentDate: formatDate(`${student.academicYear}-09-01`), // Dynamic baseline fallback
+    riskLevel: student.isActive ? "Low" : "High",
+    enrollmentDate: formatDate(`${student.academicYear}-09-01`),
     attendanceRate,
     attendanceDetail:
       attendanceRate >= 90
@@ -126,7 +140,7 @@ export function buildStudentProfile(
       disciplineIncidents,
     ),
     recentIncidents,
-    notes: fallbackNotes, // Keeps current structure, will bind backend update/post dynamically next
+    notes: fallbackNotes,
     lastUpdated: formatDate(new Date()),
   };
 }

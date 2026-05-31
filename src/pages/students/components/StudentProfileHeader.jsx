@@ -19,13 +19,17 @@ function Badge({ children, tone = "slate" }) {
 }
 
 function StudentProfileHeader({ student }) {
+  // Ensuring we have a valid ID to pass to the selector
+  const studentId = student?.id || student?.studentID;
+
   return (
     <SectionCard
-      title={student.name}
+      title={student.name || student.fullname}
       description="Student behavior, attendance, and intervention notes in one place."
       action={
         <div className="flex items-center gap-3">
-          <StudentSelector currentStudentId={student.id} />
+          <StudentSelector currentStudentId={studentId} />
+
           <Link
             to="/dashboard"
             className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
@@ -48,25 +52,19 @@ function StudentProfileHeader({ student }) {
         </div>
       }
     >
-      {/* Main Layout: Changed to a grid for better spacing on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        {/* Left Section: Avatar and Info (takes 8 columns) */}
         <div className="lg:col-span-8 flex flex-col sm:flex-row gap-8 items-start">
-          {/* Avatar: Fixed size, no shrinking */}
           <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-slate-950 text-3xl font-bold text-white shadow-xl shadow-slate-950/20">
             {student.initials}
           </div>
 
-          {/* Student Details */}
           <div className="min-w-0 flex-1 space-y-6">
-            {/* Badges Row */}
             <div className="flex flex-wrap items-center gap-3">
               <Badge tone="sky">Grade: {student.grade}</Badge>
               <Badge tone="green">{student.riskLevel} risk</Badge>
               <Badge tone="slate">Homeroom: {student.className}</Badge>
             </div>
 
-            {/* Detailed Info Grid: Increased gap and added more structure */}
             <dl className="grid gap-y-6 gap-x-12 sm:grid-cols-2">
               <div className="flex flex-col gap-1">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -76,7 +74,6 @@ function StudentProfileHeader({ student }) {
                   {student.id}
                 </dd>
               </div>
-
               <div className="flex flex-col gap-1">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   Email Address
@@ -85,7 +82,6 @@ function StudentProfileHeader({ student }) {
                   {student.email}
                 </dd>
               </div>
-
               <div className="flex flex-col gap-1">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   Enrollment Date
@@ -94,7 +90,6 @@ function StudentProfileHeader({ student }) {
                   {student.enrollmentDate}
                 </dd>
               </div>
-
               <div className="flex flex-col gap-1">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   Quick Summary
@@ -107,7 +102,6 @@ function StudentProfileHeader({ student }) {
           </div>
         </div>
 
-        {/* Right Section: Focus Area (takes 4 columns) */}
         <div className="lg:col-span-4">
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-3">

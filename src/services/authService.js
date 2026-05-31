@@ -3,16 +3,11 @@ import API from "./axiosConfig";
 const AUTH_STORAGE_KEY = "student-behavior-dashboard-auth";
 const TOKEN_KEY = "student-behavior-dashboard-token";
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
 function writeJsonValue(key, value) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(value));
 }
 
-/**  Decode JWT payload — no verification, just reading claims. */
 function parseJwtPayload(token) {
   try {
     const base64Url = token.split(".")[1];
@@ -29,7 +24,6 @@ function parseJwtPayload(token) {
   }
 }
 
-/**  Read role from JWT claims (ASP.NET Identity standard). */
 function extractRoleFromJwt(token) {
   const claims = parseJwtPayload(token);
   if (!claims) return null;
@@ -40,10 +34,6 @@ function extractRoleFromJwt(token) {
     null
   );
 }
-
-/* ------------------------------------------------------------------ */
-/*  Session helpers                                                    */
-/* ------------------------------------------------------------------ */
 
 export function getCurrentUser() {
   if (typeof window === "undefined") return null;
@@ -60,10 +50,6 @@ export function isAuthenticated() {
   return Boolean(getCurrentUser());
 }
 
-/* ------------------------------------------------------------------ */
-/*  API calls                                                          */
-/* ------------------------------------------------------------------ */
-
 export async function login(email, password) {
   try {
     const response = await API.post("/Auth/login", {
@@ -74,24 +60,24 @@ export async function login(email, password) {
     const result = response.data;
 
     if (result && result.succeeded) {
-      const serverData = result.data;
-      const token = serverData.token;
+      const serverData = result.data || {};
+      const token = serverData.token; // Directly from result.data.token
+
+      if (!token) {
+        return {
+          success: false,
+          message: "Authentication succeeded, but no token was received.",
+        };
+      }
 
       window.localStorage.setItem(TOKEN_KEY, token);
 
-      // Role priority: JWT claim  >  serverData.role  >  fallback
       const jwtRole = extractRoleFromJwt(token);
-      const role =
-        jwtRole ||
-        serverData.role ||
-        serverData.Role ||
-        serverData.userRole ||
-        "Staff";
+      const role = jwtRole || serverData.role || serverData.Role || "Staff";
 
       const session = {
-        userId: serverData.id ?? null,
-        name:
-          serverData.fullName || serverData.fullname || "Authenticated User",
+        userId: serverData.id,
+        name: serverData.fullName || "Authenticated User",
         email: email.trim().toLowerCase(),
         role,
         token,
@@ -101,21 +87,14 @@ export async function login(email, password) {
       writeJsonValue(AUTH_STORAGE_KEY, session);
       return { success: true, session };
     }
-
     return {
       success: false,
       message: result.message || "Invalid credentials.",
     };
   } catch (error) {
-    if (error.response?.data) {
-      return {
-        success: false,
-        message: error.response.data.message || "Authentication failed.",
-      };
-    }
     return {
       success: false,
-      message: "The server is unreachable.",
+      message: error.response?.data?.message || "The server is unreachable.",
     };
   }
 }
@@ -124,7 +103,7 @@ export async function register(userData) {
   try {
     const response = await API.post("/Auth/register", {
       fullName: userData.fullName.trim(),
-      email: userData.email.trim(),
+      email: userData.email.trim().toLowerCase(),
       role: userData.role,
       password: userData.password,
       confirmPassword: userData.confirmPassword,
@@ -141,15 +120,13 @@ export async function register(userData) {
       const serverData = result.data || {};
       const token = serverData.token;
 
-      if (token) {
-        window.localStorage.setItem(TOKEN_KEY, token);
-      }
+      if (token) window.localStorage.setItem(TOKEN_KEY, token);
 
       const jwtRole = token ? extractRoleFromJwt(token) : null;
       const role = jwtRole || userData.role || "Staff";
 
       const session = {
-        userId: serverData.id ?? null,
+        userId: serverData.id || null,
         name: userData.fullName.trim(),
         email: userData.email.trim().toLowerCase(),
         role,
@@ -160,26 +137,15 @@ export async function register(userData) {
       writeJsonValue(AUTH_STORAGE_KEY, session);
       return { success: true };
     }
-
     return {
       success: false,
       message: result.message || "Registration failed.",
     };
   } catch (error) {
-    if (error.response?.data) {
-      const serverData = error.response.data;
-      if (serverData.errors) {
-        const messages = Object.entries(serverData.errors)
-          .map(([field, msgs]) => `${field}: ${msgs.join(", ")}`)
-          .join(" | ");
-        return { success: false, message: messages };
-      }
-      return {
-        success: false,
-        message: serverData.message || "Registration error.",
-      };
-    }
-    return { success: false, message: "Failed to connect." };
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to connect.",
+    };
   }
 }
 
@@ -187,17 +153,10 @@ export async function logout() {
   if (typeof window === "undefined") return;
   try {
     await API.post("/Auth/logout");
-  } catch (error) {
-    console.error("Logout sync error:", error);
-  } finally {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
-    window.localStorage.removeItem(TOKEN_KEY);
-  }
+  } catch (e) {}
+  window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  window.localStorage.removeItem(TOKEN_KEY);
 }
-
-/* ------------------------------------------------------------------ */
-/*  Password strength                                                  */
-/* ------------------------------------------------------------------ */
 
 export function getPasswordStrength(password) {
   if (!password) return { label: "Weak", score: 0 };

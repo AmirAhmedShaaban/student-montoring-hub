@@ -4,7 +4,7 @@ import { changeUserPassword } from "../../../services/settingsService";
 
 const MIN_PASSWORD_LENGTH = 8;
 
-function ChangePasswordForm({ userId }) {
+function ChangePasswordForm() {
   const currentPasswordId = useId();
   const newPasswordId = useId();
   const confirmPasswordId = useId();
@@ -14,8 +14,9 @@ function ChangePasswordForm({ userId }) {
     newPassword: "",
     confirmPassword: "",
   });
+
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState(null); // { type: "success"|"error", text }
+  const [message, setMessage] = useState(null);
 
   const passwordsMatch =
     formData.newPassword.length > 0 &&
@@ -43,7 +44,7 @@ function ChangePasswordForm({ userId }) {
 
     setSaving(true);
 
-    const res = await changeUserPassword(userId, {
+    const res = await changeUserPassword({
       currentPassword: formData.currentPassword,
       newPassword: formData.newPassword,
       confirmPassword: formData.confirmPassword,

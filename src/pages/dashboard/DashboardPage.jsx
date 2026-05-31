@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardMockData } from "../../mocks/dashboard.mock";
+import { getAllStudents } from "../../services/studentService";
 import {
   ActionTile,
   DashboardCard,
@@ -12,21 +13,50 @@ function DashboardPage() {
   const data = useDashboardMockData();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [studentsList, setStudentsList] = useState([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+
+  // Load students from API on mount for real-time search
+  useEffect(() => {
+    async function fetchStudents() {
+      try {
+        setIsLoadingStudents(true);
+        const res = await getAllStudents();
+        if (res.success) {
+          setStudentsList(res.data);
+        }
+      } catch (error) {
+        console.error("Error loading students for search:", error);
+      } finally {
+        setIsLoadingStudents(false);
+      }
+    }
+    fetchStudents();
+  }, []);
 
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
 
-    // In a real app, we would search the API.
-    // For now, we'll assume the search query is the student ID or we map it.
-    // If it's a number, we navigate directly.
-    if (!isNaN(searchQuery)) {
-      navigate(`/students/${searchQuery}`);
+    // Search in the real data fetched from backend
+    const student = studentsList.find(
+      (s) =>
+        (s.fullName &&
+          s.fullName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (s.studentID && s.studentID.toString() === searchQuery),
+    );
+
+    if (student) {
+      navigate(`/students/${student.studentID}`);
     } else {
-      // Fallback: In a real scenario, we'd find the student ID by name.
-      // For now, let's navigate to student 1 as a placeholder or show an alert.
-      console.log("Searching for:", searchQuery);
-      navigate(`/students/1`);
+      alert("Student not found in the system. Please try another name or ID.");
     }
+  };
+
+  const actionRoutes = {
+    "Review Risk": "/clustering",
+    "Manage Rules": "/behavior-management",
+    "System Settings": "/settings",
+    "Student Profiles": "/students/1",
   };
 
   return (
@@ -41,7 +71,7 @@ function DashboardPage() {
               Student behavior monitoring system
             </h1>
             <p className="mt-3 text-base leading-7 text-slate-600">
-              {data.summary.note}
+              {data?.summary?.note || "Welcome to the monitoring system."}
             </p>
           </div>
 
@@ -56,17 +86,22 @@ function DashboardPage() {
               <input
                 id="student-search"
                 type="search"
-                name="student-search"
-                placeholder="Search by name, ID, or behavior note"
+                placeholder={
+                  isLoadingStudents
+                    ? "Loading students..."
+                    : "Search by name or ID..."
+                }
                 className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                disabled={isLoadingStudents}
               />
               <button
                 type="button"
                 onClick={handleSearch}
-                className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:visible:ring-2 focus:visible:ring-sky-500"
+                className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:visible:ring-2 focus:visible:ring-sky-500 disabled:opacity-50"
+                disabled={isLoadingStudents}
               >
                 Search
               </button>
@@ -86,53 +121,55 @@ function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <MetricTile
                 label="Total students"
-                value={data.totalStudents}
-                detail="Students enrolled in the active monitoring program."
+                value={data?.totalStudents || 0}
+                detail="Enrolled students"
                 accent="bg-slate-50 text-slate-700 ring-slate-200"
+                onClick={() => navigate("/clustering")}
               />
               <MetricTile
                 label="Monitored today"
-                value={data.summary.monitoredToday}
-                detail="Students reviewed in today's workflow."
+                value={data?.summary?.monitoredToday || 0}
+                detail="Reviewed today"
                 accent="bg-sky-50 text-sky-700 ring-sky-100"
               />
               <MetricTile
                 label="Follow-ups due"
-                value={data.summary.followUpsDue}
-                detail="Cases needing counselor or admin follow-up."
+                value={data?.summary?.followUpsDue || 0}
+                detail="Pending reviews"
                 accent="bg-amber-50 text-amber-700 ring-amber-100"
               />
               <MetricTile
                 label="At risk"
-                value={data.studentsAtRisk}
-                detail="Students requiring priority follow-up."
+                value={data?.studentsAtRisk || 0}
+                detail="Priority follow-up"
                 accent="bg-rose-50 text-rose-700 ring-rose-100"
+                onClick={() => navigate("/clustering")}
               />
             </div>
 
             <dl className="mt-6 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="rounded-2xl bg-slate-50 p-4 transition-all hover:bg-slate-100 cursor-default">
                 <dt className="text-sm font-medium text-slate-600">
                   Positive behaviors
                 </dt>
                 <dd className="mt-2 text-2xl font-semibold text-slate-950">
-                  {data.positiveBehaviors}
+                  {data?.positiveBehaviors || 0}
                 </dd>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="rounded-2xl bg-slate-50 p-4 transition-all hover:bg-slate-100 cursor-default">
                 <dt className="text-sm font-medium text-slate-600">
                   Behavioral issues
                 </dt>
                 <dd className="mt-2 text-2xl font-semibold text-slate-950">
-                  {data.behavioralIssues}
+                  {data?.behavioralIssues || 0}
                 </dd>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="rounded-2xl bg-slate-50 p-4 transition-all hover:bg-slate-100 cursor-default">
                 <dt className="text-sm font-medium text-slate-600">
                   AI insights
                 </dt>
                 <dd className="mt-2 text-2xl font-semibold text-slate-950">
-                  {data.summary.aiInsights}
+                  {data?.summary?.aiInsights || 0}
                 </dd>
               </div>
             </dl>
@@ -148,33 +185,28 @@ function DashboardPage() {
                   Overall attendance
                 </p>
                 <p className="mt-3 text-5xl font-semibold tracking-tight">
-                  {data.attendance.rate}%
+                  {data?.attendance?.rate || 0}%
                 </p>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  {data.attendance.present} present, {data.attendance.late}{" "}
-                  late, {data.attendance.absent} absent.
+                  {data?.attendance?.present || 0} present,{" "}
+                  {data?.attendance?.late || 0} late,{" "}
+                  {data?.attendance?.absent || 0} absent.
                 </p>
-                <div
-                  className="mt-6 h-3 rounded-full bg-slate-800"
-                  aria-hidden="true"
-                >
+                <div className="mt-6 h-3 rounded-full bg-slate-800 overflow-hidden">
                   <div
-                    className="h-3 rounded-full bg-sky-400"
-                    style={{ width: `${data.attendance.rate}%` }}
+                    className="h-full bg-sky-400 transition-all duration-1000"
+                    style={{ width: `${data?.attendance?.rate || 0}%` }}
                   />
                 </div>
-                <div
-                  className="mt-6 grid grid-cols-7 gap-2"
-                  aria-label="Attendance trend over seven days"
-                >
-                  {data.attendance.trend.map((value, index) => (
+                <div className="mt-6 grid grid-cols-7 gap-2">
+                  {(data?.attendance?.trend || []).map((value, index) => (
                     <div
                       key={`${value}-${index}`}
                       className="flex flex-col items-center gap-2"
                     >
                       <div className="flex h-24 w-full items-end rounded-2xl bg-slate-900 p-1">
                         <div
-                          className="w-full rounded-xl bg-gradient-to-t from-sky-500 to-emerald-400"
+                          className="w-full rounded-xl bg-gradient-to-t from-sky-500 to-emerald-400 transition-all duration-700"
                           style={{ height: `${value}%` }}
                         />
                       </div>
@@ -190,7 +222,7 @@ function DashboardPage() {
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-medium text-slate-600">Present</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {data.attendance.present}
+                    {data?.attendance?.present || 0}
                   </p>
                 </li>
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -198,13 +230,13 @@ function DashboardPage() {
                     Late arrivals
                   </p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {data.attendance.late}
+                    {data?.attendance?.late || 0}
                   </p>
                 </li>
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-medium text-slate-600">Absent</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {data.attendance.absent}
+                    {data?.attendance?.absent || 0}
                   </p>
                 </li>
               </ul>
@@ -220,29 +252,27 @@ function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricTile
                 label="Open interventions"
-                value={
-                  data.summary.openHinterventions ||
-                  data.summary.openInterventions
-                }
-                detail="Students currently in an active support plan."
+                value={data?.summary?.openInterventions || 0}
+                detail="Active support plan"
                 accent="bg-indigo-50 text-indigo-700 ring-indigo-100"
               />
               <MetricTile
                 label="Risk reviews"
-                value={data.summary.aiInsights}
-                detail="AI-reviewed cases that need counselor attention."
+                value={data?.summary?.aiInsights || 0}
+                detail="Need counselor attention"
                 accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
+                onClick={() => navigate("/clustering")}
               />
               <MetricTile
                 label="Attendance follow-up"
-                value={data.summary.followUpsDue}
-                detail="Attendance-related follow-up tasks due now."
+                value={data?.summary?.followUpsDue || 0}
+                detail="Due now"
                 accent="bg-sky-50 text-sky-700 ring-sky-100"
               />
               <MetricTile
                 label="Escalations"
-                value={data.summary.escalations}
-                detail="Cases that need immediate admin review."
+                value={data?.summary?.escalations || 0}
+                detail="Immediate admin review"
                 accent="bg-rose-50 text-rose-700 ring-rose-100"
               />
             </div>
@@ -253,8 +283,13 @@ function DashboardPage() {
             description="High-value actions for daily monitoring and intervention workflows."
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              {data.quickActions.map((action) => (
-                <ActionTile key={action.label} {...action} />
+              {(data?.quickActions || []).map((action) => (
+                <ActionTile
+                  key={action.label}
+                  title={action.label}
+                  description={action.description}
+                  href={actionRoutes[action.label] || "#"}
+                />
               ))}
             </div>
           </DashboardCard>

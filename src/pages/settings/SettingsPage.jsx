@@ -38,7 +38,7 @@ function sessionToProfile(s) {
     language: "en",
     emailNotificationsEnabled: true,
     pushNotificationsEnabled: true,
-    profilePicture: null,
+    profilePhotoPath: null, // Changed from profilePicture to profilePhotoPath
   };
 }
 
@@ -49,34 +49,31 @@ function SettingsPage() {
   const [profile, setProfile] = useState(() =>
     session ? sessionToProfile(session) : null,
   );
-
-  // Fix: Initialize loading based on userId existence to avoid synchronous setState in useEffect
-  const [loading, setLoading] = useState(!!userId);
+  const [loading, setLoading] = useState(true);
   const [profileUnavailable, setProfileUnavailable] = useState(false);
 
-  useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-
-    getAdminProfile(userId).then((res) => {
-      if (cancelled) return;
+  const fetchProfile = async () => {
+    if (!userId) return;
+    try {
+      const res = await getAdminProfile();
       if (res.success) {
         setProfile(res.data);
         setProfileUnavailable(false);
       } else {
         setProfileUnavailable(true);
       }
-      setLoading(false);
-    });
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+    }
+  };
 
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    fetchProfile().finally(() => setLoading(false));
   }, [userId]);
 
   const handleProfileUpdated = (updatedProfile) => {
@@ -130,39 +127,27 @@ function SettingsPage() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <SettingsHeader account={accountMeta} />
-
       {profileUnavailable && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-800">
           <span className="font-semibold">Profile unavailable.</span> Your
-          account profile has not been configured on the server yet. You can
-          still edit settings below — changes will sync once the administrator
-          enables your profile.
+          account profile has not been configured on the server yet.
         </div>
       )}
-
       <div className="space-y-6">
         <ProfilePictureSection
-          userId={userId}
-          currentPicture={profile?.profilePicture ?? null}
+          currentPicture={profile?.profilePhotoPath ?? null} // Changed to profilePhotoPath
           userName={profile?.fullname || session?.name || ""}
-          onPictureUpdated={(url) =>
-            setProfile((prev) => ({ ...prev, profilePicture: url }))
-          }
+          onPictureUpdated={fetchProfile}
         />
-
-        {/* Fix: Added key prop. When profile changes, the component remounts and state is re-initialized correctly */}
         <ProfileInfoSection
           key={profile?.fullname || "default"}
           profile={profile}
-          userId={userId}
           languageOptions={LANGUAGE_OPTIONS}
           resolveLanguageValue={resolveLanguageValue}
           onProfileUpdated={handleProfileUpdated}
         />
-
-        <PasswordSection userId={userId} />
-
-        <DeleteAccountSection userId={userId} />
+        <PasswordSection />
+        <DeleteAccountSection />
       </div>
     </div>
   );
