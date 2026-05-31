@@ -72,19 +72,28 @@ export function ProgressRow({ label, value, detail, accent = "bg-sky-500" }) {
   );
 }
 
-export function ActionTile({ title, description, href }) {
+export function ActionTile({ title, description, href, icon }) {
   return (
     <Link
       to={href || "#"}
       className="group block rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-all duration-300 hover:border-sky-200 hover:bg-sky-50 hover:shadow-sm active:scale-95 focus:outline-none focus:visible:ring-2 focus:visible:ring-sky-500"
     >
-      <h3 className="font-semibold text-slate-950 group-hover:text-sky-800 transition-colors">
-        {title}
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-      <span className="mt-4 inline-flex text-sm font-medium text-sky-700">
-        Open action
-      </span>
+      <div className="flex items-start gap-3">
+        {icon && (
+          <div className="mt-0.5 text-sky-600 group-hover:text-sky-700 transition-colors">
+            {icon}
+          </div>
+        )}
+        <div>
+          <h3 className="font-semibold text-slate-950 group-hover:text-sky-800 transition-colors">
+            {title}
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+          <span className="mt-4 inline-flex text-sm font-medium text-sky-700">
+            Open action
+          </span>
+        </div>
+      </div>
     </Link>
   );
 }

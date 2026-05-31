@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDashboardMockData } from "../../mocks/dashboard.mock";
 import { getAllStudents } from "../../services/studentService";
 import {
   ActionTile,
@@ -8,15 +7,86 @@ import {
   MetricTile,
 } from "./components/DashboardComponents";
 import AIUploadCard from "./components/AIUploadCard";
+import StudentAcademicCard from "./components/StudentAcademicCard";
+import {
+  getDashboardStats,
+  getAllAttendanceCounts,
+  getStudentAcademic,
+} from "../../services/dashboardService";
+
+const actionIcons = {
+  "Record behavior note": (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
+    </svg>
+  ),
+  "Open student profile": (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
+    </svg>
+  ),
+  "Review clustering": (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M17 20h5v-2a3 3 0 01-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 01-2 2 2 2 0 01-2-2 2 2 0 012-2 2 2 0 012 2z"
+      />
+    </svg>
+  ),
+};
 
 function DashboardPage() {
-  const data = useDashboardMockData();
   const navigate = useNavigate();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [studentsList, setStudentsList] = useState([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+  const [searchMessage, setSearchMessage] = useState(null);
 
-  // Load students from API on mount for real-time search
+  const [stats, setStats] = useState(null);
+  const [attendance, setAttendance] = useState({
+    present: 0,
+    absent: 0,
+    late: 0,
+  });
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
+
+  // Academic data
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [academicData, setAcademicData] = useState(null);
+  const [loadingAcademic, setLoadingAcademic] = useState(false);
+
+  // Load students for search
   useEffect(() => {
     async function fetchStudents() {
       try {
@@ -34,10 +104,31 @@ function DashboardPage() {
     fetchStudents();
   }, []);
 
-  const handleSearch = () => {
-    if (!searchQuery.trim()) return;
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoadingDashboard(true);
 
-    // Search in the real data fetched from backend
+      const [statsRes, attendanceRes] = await Promise.all([
+        getDashboardStats(),
+        getAllAttendanceCounts(),
+      ]);
+
+      if (statsRes.success) setStats(statsRes.data);
+      if (attendanceRes.success) setAttendance(attendanceRes.data);
+
+      setLoadingDashboard(false);
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearchMessage(null);
+    setAcademicData(null);
+    setSelectedStudent(null);
+
     const student = studentsList.find(
       (s) =>
         (s.fullName &&
@@ -46,21 +137,45 @@ function DashboardPage() {
     );
 
     if (student) {
-      navigate(`/students/${student.studentID}`);
+      setSelectedStudent(student);
+      setSearchMessage({ type: "success", text: "Student found." });
+
+      setLoadingAcademic(true);
+      const academicRes = await getStudentAcademic(student.studentID);
+      if (academicRes.success) {
+        setAcademicData(academicRes.data);
+      }
+      setLoadingAcademic(false);
     } else {
-      alert("Student not found in the system. Please try another name or ID.");
+      setSearchMessage({
+        type: "error",
+        text: "Student not found. Please try another name or ID.",
+      });
     }
   };
 
   const actionRoutes = {
-    "Review Risk": "/clustering",
-    "Manage Rules": "/behavior-management",
-    "System Settings": "/settings",
-    "Student Profiles": "/students/1",
+    "Record behavior note": "/behavior-management",
+    "Open student profile": "/students/1",
+    "Review clustering": "/clustering",
   };
+
+  if (loadingDashboard) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
+          <p className="mt-4 text-sm text-slate-500">
+            Loading dashboard data...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header + Search */}
       <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
@@ -70,9 +185,6 @@ function DashboardPage() {
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
               Student behavior monitoring system
             </h1>
-            <p className="mt-3 text-base leading-7 text-slate-600">
-              {data?.summary?.note || "Welcome to the monitoring system."}
-            </p>
           </div>
 
           <div className="w-full max-w-xl">
@@ -100,18 +212,89 @@ function DashboardPage() {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:visible:ring-2 focus:visible:ring-sky-500 disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
                 disabled={isLoadingStudents}
               >
                 Search
               </button>
             </div>
+
+            {searchMessage && (
+              <p
+                className={`mt-2 text-sm font-medium ${searchMessage.type === "success" ? "text-emerald-600" : "text-rose-600"}`}
+              >
+                {searchMessage.text}
+              </p>
+            )}
           </div>
         </div>
       </section>
 
+      {/* Academic Card - Dynamic on Search */}
+      {selectedStudent && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-sm font-medium text-slate-600">
+              Academic Information
+            </p>
+            <button
+              onClick={() => {
+                setSelectedStudent(null);
+                setAcademicData(null);
+                setSearchQuery("");
+              }}
+              className="text-sm text-slate-500 hover:text-slate-700"
+            >
+              Clear
+            </button>
+          </div>
+
+          {loadingAcademic ? (
+            <div className="flex h-40 items-center justify-center rounded-3xl border border-slate-200 bg-white">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
+            </div>
+          ) : (
+            <StudentAcademicCard academicData={academicData} />
+          )}
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <DashboardCard
+        title="Quick actions"
+        description="High-value actions for daily monitoring and intervention workflows."
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              label: "Record behavior note",
+              description: "Log a positive note or intervention update.",
+            },
+            {
+              label: "Open student profile",
+              description:
+                "Review attendance, incidents, and follow-up history.",
+            },
+            {
+              label: "Review clustering",
+              description:
+                "See risk groups and AI-assisted intervention segments.",
+            },
+          ].map((action) => (
+            <ActionTile
+              key={action.label}
+              title={action.label}
+              description={action.description}
+              href={actionRoutes[action.label] || "#"}
+              icon={actionIcons[action.label]}
+            />
+          ))}
+        </div>
+      </DashboardCard>
+
       <AIUploadCard />
 
+      {/* Student Summary + Attendance + Intervention */}
       <div className="grid gap-6 xl:grid-cols-12">
         <div className="space-y-6 xl:col-span-7">
           <DashboardCard
@@ -121,55 +304,55 @@ function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <MetricTile
                 label="Total students"
-                value={data?.totalStudents || 0}
+                value={stats?.totalStudents || 0}
                 detail="Enrolled students"
                 accent="bg-slate-50 text-slate-700 ring-slate-200"
                 onClick={() => navigate("/clustering")}
               />
               <MetricTile
                 label="Monitored today"
-                value={data?.summary?.monitoredToday || 0}
+                value={stats?.studentsMonitoreditToday || 0}
                 detail="Reviewed today"
                 accent="bg-sky-50 text-sky-700 ring-sky-100"
               />
               <MetricTile
-                label="Follow-ups due"
-                value={data?.summary?.followUpsDue || 0}
-                detail="Pending reviews"
-                accent="bg-amber-50 text-amber-700 ring-amber-100"
-              />
-              <MetricTile
                 label="At risk"
-                value={data?.studentsAtRisk || 0}
+                value={stats?.studentsAtRisk || 0}
                 detail="Priority follow-up"
                 accent="bg-rose-50 text-rose-700 ring-rose-100"
                 onClick={() => navigate("/clustering")}
+              />
+              <MetricTile
+                label="Positive behaviors"
+                value={stats?.positiveBehaviors || 0}
+                detail="This period"
+                accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
               />
             </div>
 
             <dl className="mt-6 grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl bg-slate-50 p-4 transition-all hover:bg-slate-100 cursor-default">
                 <dt className="text-sm font-medium text-slate-600">
-                  Positive behaviors
-                </dt>
-                <dd className="mt-2 text-2xl font-semibold text-slate-950">
-                  {data?.positiveBehaviors || 0}
-                </dd>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4 transition-all hover:bg-slate-100 cursor-default">
-                <dt className="text-sm font-medium text-slate-600">
                   Behavioral issues
                 </dt>
                 <dd className="mt-2 text-2xl font-semibold text-slate-950">
-                  {data?.behavioralIssues || 0}
+                  {stats?.behavioralIssues || 0}
                 </dd>
               </div>
               <div className="rounded-2xl bg-slate-50 p-4 transition-all hover:bg-slate-100 cursor-default">
                 <dt className="text-sm font-medium text-slate-600">
-                  AI insights
+                  Honor Roll
                 </dt>
                 <dd className="mt-2 text-2xl font-semibold text-slate-950">
-                  {data?.summary?.aiInsights || 0}
+                  {stats?.honorRoll || 0}
+                </dd>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4 transition-all hover:bg-slate-100 cursor-default">
+                <dt className="text-sm font-medium text-slate-600">
+                  Students Improving
+                </dt>
+                <dd className="mt-2 text-2xl font-semibold text-slate-950">
+                  {stats?.studentsImproving || 0}
                 </dd>
               </div>
             </dl>
@@ -177,7 +360,7 @@ function DashboardPage() {
 
           <DashboardCard
             title="Attendance"
-            description="Weekly attendance snapshot with presence and punctuality signals."
+            description="Current attendance overview"
           >
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="rounded-3xl bg-slate-950 p-6 text-white">
@@ -185,58 +368,31 @@ function DashboardPage() {
                   Overall attendance
                 </p>
                 <p className="mt-3 text-5xl font-semibold tracking-tight">
-                  {data?.attendance?.rate || 0}%
+                  {stats?.presentStudents || 0}%
                 </p>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  {data?.attendance?.present || 0} present,{" "}
-                  {data?.attendance?.late || 0} late,{" "}
-                  {data?.attendance?.absent || 0} absent.
+                  {attendance.present} present, {attendance.late} late,{" "}
+                  {attendance.absent} absent.
                 </p>
-                <div className="mt-6 h-3 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full bg-sky-400 transition-all duration-1000"
-                    style={{ width: `${data?.attendance?.rate || 0}%` }}
-                  />
-                </div>
-                <div className="mt-6 grid grid-cols-7 gap-2">
-                  {(data?.attendance?.trend || []).map((value, index) => (
-                    <div
-                      key={`${value}-${index}`}
-                      className="flex flex-col items-center gap-2"
-                    >
-                      <div className="flex h-24 w-full items-end rounded-2xl bg-slate-900 p-1">
-                        <div
-                          className="w-full rounded-xl bg-gradient-to-t from-sky-500 to-emerald-400 transition-all duration-700"
-                          style={{ height: `${value}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-slate-400">
-                        Day {index + 1}
-                      </span>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <ul className="space-y-4">
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-medium text-slate-600">Present</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {data?.attendance?.present || 0}
+                    {attendance.present}
                   </p>
                 </li>
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-600">
-                    Late arrivals
-                  </p>
+                  <p className="text-sm font-medium text-slate-600">Late</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {data?.attendance?.late || 0}
+                    {attendance.late}
                   </p>
                 </li>
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-medium text-slate-600">Absent</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {data?.attendance?.absent || 0}
+                    {attendance.absent}
                   </p>
                 </li>
               </ul>
@@ -251,46 +407,29 @@ function DashboardPage() {
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricTile
-                label="Open interventions"
-                value={data?.summary?.openInterventions || 0}
-                detail="Active support plan"
-                accent="bg-indigo-50 text-indigo-700 ring-indigo-100"
-              />
-              <MetricTile
-                label="Risk reviews"
-                value={data?.summary?.aiInsights || 0}
-                detail="Need counselor attention"
-                accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
-                onClick={() => navigate("/clustering")}
-              />
-              <MetricTile
-                label="Attendance follow-up"
-                value={data?.summary?.followUpsDue || 0}
-                detail="Due now"
-                accent="bg-sky-50 text-sky-700 ring-sky-100"
-              />
-              <MetricTile
-                label="Escalations"
-                value={data?.summary?.escalations || 0}
-                detail="Immediate admin review"
+                label="At risk"
+                value={stats?.studentsAtRisk || 0}
+                detail="Priority follow-up"
                 accent="bg-rose-50 text-rose-700 ring-rose-100"
               />
-            </div>
-          </DashboardCard>
-
-          <DashboardCard
-            title="Quick actions"
-            description="High-value actions for daily monitoring and intervention workflows."
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              {(data?.quickActions || []).map((action) => (
-                <ActionTile
-                  key={action.label}
-                  title={action.label}
-                  description={action.description}
-                  href={actionRoutes[action.label] || "#"}
-                />
-              ))}
+              <MetricTile
+                label="Positive behaviors"
+                value={stats?.positiveBehaviors || 0}
+                detail="This period"
+                accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
+              />
+              <MetricTile
+                label="Behavioral issues"
+                value={stats?.behavioralIssues || 0}
+                detail="Needs attention"
+                accent="bg-amber-50 text-amber-700 ring-amber-100"
+              />
+              <MetricTile
+                label="Honor Roll"
+                value={stats?.honorRoll || 0}
+                detail="Top performers"
+                accent="bg-sky-50 text-sky-700 ring-sky-100"
+              />
             </div>
           </DashboardCard>
         </div>

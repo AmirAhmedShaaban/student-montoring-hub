@@ -23,6 +23,14 @@ function UploadIcon() {
   );
 }
 
+function formatFileSize(bytes) {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
 export default function AIUploadCard() {
   const fileInputRef = useRef(null);
   const timerRefs = useRef([]);
@@ -30,6 +38,7 @@ export default function AIUploadCard() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [status, setStatus] = useState("idle");
   const [progress, setProgress] = useState(0);
+  const [fileInfo, setFileInfo] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -56,17 +65,29 @@ export default function AIUploadCard() {
       setStatus("failed");
       return;
     }
+
     clearTimers();
+
     const nextResult = createMockAnalysisResponse(file);
+
     setSelectedFile(file);
+    setFileInfo({
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type,
+    });
+
     setStatus("uploading");
-    setProgress(12);
-    queueState(450, "processing", 48);
+    setProgress(15);
+
+    queueState(400, "processing", 55);
+
     const completionTimer = setTimeout(() => {
       setStatus("completed");
       setProgress(100);
       applyMockAnalysisResult(nextResult);
-    }, 1550);
+    }, 1600);
+
     timerRefs.current.push(completionTimer);
   };
 
@@ -94,143 +115,145 @@ export default function AIUploadCard() {
     openFilePicker();
   };
 
+  const handleRemoveFile = () => {
+    clearTimers();
+    setSelectedFile(null);
+    setFileInfo(null);
+    setStatus("idle");
+    setProgress(0);
+  };
+
   const isBusy = status === "uploading" || status === "processing";
+
   const buttonLabel =
     status === "idle"
-      ? "Upload video"
+      ? "Upload classroom media"
       : status === "completed"
-        ? "Upload again"
-        : "Processing";
+        ? "Analyze again"
+        : "Processing...";
+
   const statusLabel =
     status === "uploading"
-      ? "Uploading..."
+      ? "Uploading media..."
       : status === "processing"
-        ? "Processing..."
+        ? "AI is analyzing..."
         : status === "completed"
-          ? "Analysis completed"
+          ? "Analysis completed successfully"
           : status === "failed"
             ? "Upload failed"
             : "Ready to upload";
 
   return (
-    <section className="relative overflow-hidden rounded-[1.6rem] border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-3 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.32)] sm:p-4 lg:p-4">
+    <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <input
         ref={fileInputRef}
         type="file"
         accept="video/*,image/*"
         onChange={handleFileSelection}
         className="sr-only"
-        aria-label="Upload classroom media"
       />
 
-      <div className="grid gap-3 lg:grid-cols-[0.72fr_1.28fr] lg:items-start xl:gap-4">
-        <div className="flex h-fit self-start flex-col justify-center rounded-[1.4rem] border border-slate-200 bg-white/80 p-3 shadow-sm sm:p-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-950">
-              Classroom media analysis
-            </p>
-            <p className="mt-2.5 max-w-md text-sm leading-5 text-slate-600 sm:text-[0.92rem]">
-              Upload classroom media to trigger the analysis workflow.
-            </p>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        {/* Left Side - Info */}
+        <div className="max-w-md">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-sky-100 p-3">
+              <UploadIcon />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-slate-950">
+                Classroom Media Analysis
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Upload video or image to get AI-powered behavior insights
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="h-fit self-start rounded-[1.4rem] border border-slate-200 bg-white/90 p-2 shadow-sm sm:p-2.5">
+        {/* Upload Area */}
+        <div className="flex-1 max-w-2xl">
           <div
-            role="button"
-            tabIndex={0}
             onClick={openFilePicker}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openFilePicker();
-              }
-            }}
-            onDragEnter={(event) => {
-              event.preventDefault();
+            onDragEnter={(e) => {
+              e.preventDefault();
               setIsDragging(true);
             }}
-            onDragOver={(event) => {
-              event.preventDefault();
+            onDragOver={(e) => {
+              e.preventDefault();
               setIsDragging(true);
             }}
-            onDragLeave={(event) => {
-              event.preventDefault();
+            onDragLeave={(e) => {
+              e.preventDefault();
               setIsDragging(false);
             }}
             onDrop={handleDrop}
-            className={`group flex min-h-[4.25rem] w-full cursor-pointer flex-col items-center justify-center rounded-[1.35rem] border-2 border-dashed px-4 py-3 text-center transition outline-none sm:min-h-[4.25rem] sm:px-5 ${
+            className={`group flex min-h-[140px] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
               isDragging
-                ? "border-sky-400 bg-sky-50 shadow-[0_16px_36px_-28px_rgba(14,165,233,0.8)]"
-                : "border-slate-200 bg-slate-50/80 hover:border-sky-300 hover:bg-sky-50/70"
-            } focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2`}
+                ? "border-sky-400 bg-sky-50"
+                : "border-slate-200 hover:border-sky-300 hover:bg-slate-50"
+            }`}
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-white shadow-sm ring-1 ring-slate-200 transition duration-300 group-hover:-translate-y-0.5 group-hover:scale-[1.01]">
+            <div className="mb-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
               <UploadIcon />
             </div>
-            <p className="mt-2.5 max-w-xl text-sm leading-5 text-slate-700 sm:text-[0.9rem]">
-              Drag and drop classroom media here, or{" "}
-              <span className="font-semibold text-sky-700">browse files</span>
+            <p className="text-sm font-medium text-slate-700">
+              Drag & drop classroom media here, or{" "}
+              <span className="font-semibold text-sky-600">browse files</span>
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Supports MP4, MOV, JPG, PNG (Max 100MB)
             </p>
           </div>
 
-          <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-            <div className="flex items-center justify-between gap-3 text-sm font-medium text-slate-600">
-              <span>{statusLabel}</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="mt-1.5 h-1.5 rounded-full bg-slate-200">
-              <div
-                className="h-1.5 rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-                aria-hidden="true"
-              />
-            </div>
-            <p className="mt-1 text-[0.7rem] leading-4 text-slate-600">
-              {selectedFile
-                ? "Media selected. Analysis will update shared dashboard data."
-                : "Choose a video or image to start the upload."}
-            </p>
-          </div>
+          {/* Status & Progress */}
+          {(status !== "idle" || fileInfo) && (
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-slate-700">
+                  {statusLabel}
+                </span>
+                <span className="font-mono text-slate-500">{progress}%</span>
+              </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleUploadClick}
-              disabled={isBusy}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-1.5 text-sm font-semibold text-white shadow-lg shadow-sky-200 transition duration-300 hover:-translate-y-0.5 hover:bg-sky-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:translate-y-0"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-                className="h-5 w-5"
-              >
-                <path
-                  d="M12 16V4m0 0 4 4m-4-4-4 4M5 20h14"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-2 rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
                 />
-              </svg>
-              {buttonLabel}
-            </button>
-          </div>
+              </div>
 
-          <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[0.7rem] leading-4 text-slate-600">
-            {status === "completed"
-              ? "Results are ready for review."
-              : status === "failed"
-                ? "Upload failed. Please try again."
-                : "Processing classroom media..."}
-          </div>
+              {fileInfo && (
+                <div className="mt-3 flex items-center justify-between text-sm">
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      {fileInfo.name}
+                    </p>
+                    <p className="text-xs text-slate-500">{fileInfo.size}</p>
+                  </div>
+                  {status === "completed" && (
+                    <button
+                      onClick={handleRemoveFile}
+                      className="text-xs font-medium text-rose-600 hover:text-rose-700"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action Button */}
+          <button
+            onClick={handleUploadClick}
+            disabled={isBusy}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {buttonLabel}
+          </button>
         </div>
       </div>
-
-      {/* Adding a simulated scanning effect decoration */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 blur-3xl rounded-full -mr-16 -mt-16" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full -ml-16 -mb-16" />
     </section>
   );
 }

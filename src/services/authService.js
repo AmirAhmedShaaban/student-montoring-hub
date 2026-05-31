@@ -153,7 +153,9 @@ export async function logout() {
   if (typeof window === "undefined") return;
   try {
     await API.post("/Auth/logout");
-  } catch (e) {}
+  } catch (error) {
+    console.log(error);
+  }
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
   window.localStorage.removeItem(TOKEN_KEY);
 }

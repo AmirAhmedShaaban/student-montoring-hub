@@ -9,6 +9,8 @@ import {
   getStudentNotes,
   addStudentNote,
 } from "../../services/studentService";
+import { getStudentAcademic } from "../../services/dashboardService";
+
 import AddNoteForm from "./components/AddNoteForm";
 import DisciplineIncidentsCard from "./components/DisciplineIncidentsCard";
 import NotesPanel from "./components/NotesPanel";
@@ -16,12 +18,19 @@ import ProfileStatCard from "./components/ProfileStatCard";
 import RecentIncidentsList from "./components/RecentIncidentsList";
 import StudentProfileHeader from "./components/StudentProfileHeader";
 import StudentTabs from "./components/StudentTabs";
+import StudentAcademicCard from "../dashboard/components/StudentAcademicCard";
+
 import {
   buildStudentProfile,
   STUDENT_PROFILE_TABS,
 } from "./studentProfile.utils";
 
-function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
+function StudentProfileWorkspace({
+  profile,
+  latestAnalysis,
+  studentId,
+  academicData,
+}) {
   const [activeTab, setActiveTab] = useState(STUDENT_PROFILE_TABS[0].id);
   const [notes, setNotes] = useState(profile.notes || []);
   const [draftNote, setDraftNote] = useState({
@@ -74,13 +83,15 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
   const activeTabLabel =
     STUDENT_PROFILE_TABS.find((tab) => tab.id === activeTab)?.label ??
     STUDENT_PROFILE_TABS[0].label;
+
   const panelId = `student-panel-${activeTab}`;
   const tabId = `student-tab-${activeTab}`;
 
   const getActiveTabContent = () => {
     if (activeTab === "overview") {
       return (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid gap-6 xl:grid-cols-2">
+          {/* Left Column */}
           <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <ProfileStatCard
@@ -96,6 +107,7 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
                 accent="bg-emerald-50 text-emerald-700 ring-emerald-100"
               />
             </div>
+
             <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
               <h2 className="text-lg font-semibold text-slate-950">
                 Quick profile
@@ -122,46 +134,54 @@ function StudentProfileWorkspace({ profile, latestAnalysis, studentId }) {
               </dl>
             </section>
           </div>
-          <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
-            <h2 className="text-lg font-semibold text-slate-950">
-              Latest AI analysis
-            </h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              Shared result from the latest uploaded media.
-            </p>
-            <dl className="mt-5 space-y-4 text-sm">
-              <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                <dt className="text-slate-500">Classification</dt>
-                <dd className="font-medium text-slate-900">
-                  {latestAnalysis.classification}
-                </dd>
-              </div>
-              <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                <dt className="text-slate-500">Cluster</dt>
-                <dd className="font-medium text-slate-900">
-                  {latestAnalysis.cluster}
-                </dd>
-              </div>
-              <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                <dt className="text-slate-500">Risk level</dt>
-                <dd className="font-medium text-slate-900">
-                  {latestAnalysis.riskLevel}
-                </dd>
-              </div>
-              <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                <dt className="text-slate-500">Follow-up</dt>
-                <dd className="font-medium text-slate-900">
-                  {latestAnalysis.followUpStatus}
-                </dd>
-              </div>
-              <div className="flex items-start justify-between gap-4">
-                <dt className="text-slate-500">Suggested intervention</dt>
-                <dd className="font-medium text-slate-900">
-                  {latestAnalysis.suggestedIntervention}
-                </dd>
-              </div>
-            </dl>
-          </section>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Latest AI Analysis */}
+            <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+              <h2 className="text-lg font-semibold text-slate-950">
+                Latest AI analysis
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Shared result from the latest uploaded media.
+              </p>
+              <dl className="mt-5 space-y-4 text-sm">
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                  <dt className="text-slate-500">Classification</dt>
+                  <dd className="font-medium text-slate-900">
+                    {latestAnalysis.classification}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                  <dt className="text-slate-500">Cluster</dt>
+                  <dd className="font-medium text-slate-900">
+                    {latestAnalysis.cluster}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                  <dt className="text-slate-500">Risk level</dt>
+                  <dd className="font-medium text-slate-900">
+                    {latestAnalysis.riskLevel}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                  <dt className="text-slate-500">Follow-up</dt>
+                  <dd className="font-medium text-slate-900">
+                    {latestAnalysis.followUpStatus}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-slate-500">Suggested intervention</dt>
+                  <dd className="font-medium text-slate-900">
+                    {latestAnalysis.suggestedIntervention}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            {/* Academic Card */}
+            <StudentAcademicCard academicData={academicData} />
+          </div>
         </div>
       );
     }
@@ -231,6 +251,7 @@ function StudentProfilePage() {
   const { id } = useParams();
   const dashboardData = useDashboardMockData();
   const [profileData, setProfileData] = useState(null);
+  const [academicData, setAcademicData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -241,14 +262,21 @@ function StudentProfilePage() {
         setError("");
         const targetId = id ? Number(id) : 1;
 
-        const [studentRes, attendanceRes, gradesRes, behaviorRes, notesRes] =
-          await Promise.all([
-            getStudentById(targetId),
-            getStudentAttendance(targetId),
-            getStudentGrades(targetId),
-            getStudentBehavior(targetId),
-            getStudentNotes(targetId),
-          ]);
+        const [
+          studentRes,
+          attendanceRes,
+          gradesRes,
+          behaviorRes,
+          notesRes,
+          academicRes,
+        ] = await Promise.all([
+          getStudentById(targetId),
+          getStudentAttendance(targetId),
+          getStudentGrades(targetId),
+          getStudentBehavior(targetId),
+          getStudentNotes(targetId),
+          getStudentAcademic(targetId),
+        ]);
 
         if (studentRes.success) {
           const transformedProfile = buildStudentProfile(
@@ -259,6 +287,10 @@ function StudentProfilePage() {
           );
           transformedProfile.notes = notesRes.success ? notesRes.data : [];
           setProfileData(transformedProfile);
+
+          if (academicRes.success) {
+            setAcademicData(academicRes.data);
+          }
         } else {
           setError(
             studentRes.message || "Failed to load student base records.",
@@ -270,6 +302,7 @@ function StudentProfilePage() {
         setLoading(false);
       }
     }
+
     fetchFullProfile();
   }, [id]);
 
@@ -316,6 +349,7 @@ function StudentProfilePage() {
       profile={profileData}
       latestAnalysis={dashboardData.latestAnalysisResult}
       studentId={profileData.id}
+      academicData={academicData}
     />
   );
 }
