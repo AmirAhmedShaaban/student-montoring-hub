@@ -32,7 +32,7 @@ function buildAccountMeta(profile) {
 
 function sessionToProfile(s) {
   return {
-    fullname: s.name || "", // Standardize naming convention here
+    fullname: s.name || "",
     email: s.email || "",
     role: s.role || "Teacher",
     language: "en",
@@ -49,7 +49,9 @@ function SettingsPage() {
   const [profile, setProfile] = useState(() =>
     session ? sessionToProfile(session) : null,
   );
-  const [loading, setLoading] = useState(true);
+
+  // Fix: Initialize loading based on userId existence to avoid synchronous setState in useEffect
+  const [loading, setLoading] = useState(!!userId);
   const [profileUnavailable, setProfileUnavailable] = useState(false);
 
   useEffect(() => {
@@ -67,7 +69,6 @@ function SettingsPage() {
         setProfile(res.data);
         setProfileUnavailable(false);
       } else {
-        // 404 — keep session fallback but flag as unavailable
         setProfileUnavailable(true);
       }
       setLoading(false);
@@ -149,7 +150,9 @@ function SettingsPage() {
           }
         />
 
+        {/* Fix: Added key prop. When profile changes, the component remounts and state is re-initialized correctly */}
         <ProfileInfoSection
+          key={profile?.fullname || "default"}
           profile={profile}
           userId={userId}
           languageOptions={LANGUAGE_OPTIONS}

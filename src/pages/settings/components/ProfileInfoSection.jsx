@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useState } from "react";
 import {
   Button,
   Card,
@@ -20,34 +20,21 @@ function ProfileInfoSection({
   resolveLanguageValue,
   onProfileUpdated,
 }) {
-  const fullNameId = useId();
-  const emailId = useId();
-  const roleId = useId();
-  const languageId = useId();
+  // Fix: Removed unused useId calls
 
+  // Fix: Initialize state directly from props.
+  // Because we use a 'key' in the parent, this component remounts when profile changes.
   const [formData, setFormData] = useState({
-    fullname: "",
-    email: "",
-    language: 0,
-    emailNotificationsEnabled: true,
-    pushNotificationsEnabled: true,
+    fullname: profile?.fullname || profile?.fullName || "",
+    email: profile?.email || "",
+    language: profile ? resolveLanguageValue(profile.language) : 0,
+    emailNotificationsEnabled: profile?.emailNotificationsEnabled ?? true,
+    pushNotificationsEnabled: profile?.pushNotificationsEnabled ?? true,
   });
+
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState(null); // { type: "success"|"error", text }
+  const [message, setMessage] = useState(null);
 
-  /* ---- sync form when profile loads or changes ---- */
-  useEffect(() => {
-    if (!profile) return;
-    setFormData({
-      fullname: profile.fullname || profile.fullName || "",
-      email: profile.email || "",
-      language: resolveLanguageValue(profile.language),
-      emailNotificationsEnabled: profile.emailNotificationsEnabled ?? true,
-      pushNotificationsEnabled: profile.pushNotificationsEnabled ?? true,
-    });
-  }, [profile, resolveLanguageValue]);
-
-  /* ---- avatar helpers ---- */
   const avatarLabel =
     (profile?.fullname || profile?.fullName || "U")
       .split(/\s+/)
@@ -59,7 +46,6 @@ function ProfileInfoSection({
 
   const roleDisplay = profile?.role || "User";
 
-  /* ---- submit ---- */
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -77,12 +63,10 @@ function ProfileInfoSection({
     if (res.success) {
       const newName = formData.fullname.trim();
 
-      // Merge server response into local state
       if (res.data) {
         onProfileUpdated(res.data);
       }
 
-      // Update the localStorage session so the sidebar reflects the new name
       updateProfile({ name: newName });
       refreshSession();
 
@@ -104,7 +88,6 @@ function ProfileInfoSection({
         description="Keep your staff identity details accurate for communication."
       />
 
-      {/* avatar row */}
       <div className="flex items-center gap-4 pt-5">
         <div
           className="flex h-16 w-16 items-center justify-center rounded-3xl bg-sky-600 text-lg font-semibold text-white shadow-sm"
@@ -120,11 +103,10 @@ function ProfileInfoSection({
         </div>
       </div>
 
-      {/* form */}
       <form className="pt-5" onSubmit={handleSubmit}>
         <div className="grid gap-4 sm:grid-cols-2">
           <TextInput
-            id={fullNameId}
+            id="fullname"
             label="Full name"
             value={formData.fullname}
             onChange={(event) =>
@@ -135,7 +117,7 @@ function ProfileInfoSection({
           />
 
           <TextInput
-            id={emailId}
+            id="email"
             label="Email address"
             type="email"
             value={formData.email}
@@ -145,7 +127,7 @@ function ProfileInfoSection({
           />
 
           <SelectField
-            id={languageId}
+            id="language"
             label="Language"
             value={formData.language}
             onChange={(event) =>
@@ -164,20 +146,19 @@ function ProfileInfoSection({
 
           <div className="space-y-2">
             <label
-              htmlFor={roleId}
+              htmlFor="role"
               className="block text-sm font-medium text-slate-700"
             >
               Role
             </label>
             <div
-              id={roleId}
+              id="role"
               className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800"
             >
               {roleDisplay}
             </div>
           </div>
 
-          {/* notification toggles — full width */}
           <div className="sm:col-span-2 space-y-3">
             <ToggleSwitch
               id="email-notifications"
@@ -206,7 +187,6 @@ function ProfileInfoSection({
           </div>
         </div>
 
-        {/* feedback + submit row */}
         <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p
             className={`text-sm leading-6 ${

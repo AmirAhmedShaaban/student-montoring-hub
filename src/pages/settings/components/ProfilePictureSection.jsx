@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button, Card, SectionHeader } from "./SettingsUI";
 import {
   uploadProfilePicture,

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDashboardMockData } from "../../mocks/dashboard.mock";
 import {
   ActionTile,
@@ -8,6 +10,24 @@ import AIUploadCard from "./components/AIUploadCard";
 
 function DashboardPage() {
   const data = useDashboardMockData();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = () => {
+    if (!searchQuery.trim()) return;
+
+    // In a real app, we would search the API.
+    // For now, we'll assume the search query is the student ID or we map it.
+    // If it's a number, we navigate directly.
+    if (!isNaN(searchQuery)) {
+      navigate(`/students/${searchQuery}`);
+    } else {
+      // Fallback: In a real scenario, we'd find the student ID by name.
+      // For now, let's navigate to student 1 as a placeholder or show an alert.
+      console.log("Searching for:", searchQuery);
+      navigate(`/students/1`);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -39,10 +59,14 @@ function DashboardPage() {
                 name="student-search"
                 placeholder="Search by name, ID, or behavior note"
                 className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                onClick={handleSearch}
+                className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:visible:ring-2 focus:visible:ring-sky-500"
               >
                 Search
               </button>
@@ -69,7 +93,7 @@ function DashboardPage() {
               <MetricTile
                 label="Monitored today"
                 value={data.summary.monitoredToday}
-                detail="Students reviewed in today&apos;s workflow."
+                detail="Students reviewed in today's workflow."
                 accent="bg-sky-50 text-sky-700 ring-sky-100"
               />
               <MetricTile
@@ -127,7 +151,8 @@ function DashboardPage() {
                   {data.attendance.rate}%
                 </p>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  {data.attendance.present} present, {data.attendance.late} late, {data.attendance.absent} absent.
+                  {data.attendance.present} present, {data.attendance.late}{" "}
+                  late, {data.attendance.absent} absent.
                 </p>
                 <div
                   className="mt-6 h-3 rounded-full bg-slate-800"
@@ -195,7 +220,10 @@ function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricTile
                 label="Open interventions"
-                value={data.summary.openInterventions}
+                value={
+                  data.summary.openHinterventions ||
+                  data.summary.openInterventions
+                }
                 detail="Students currently in an active support plan."
                 accent="bg-indigo-50 text-indigo-700 ring-indigo-100"
               />

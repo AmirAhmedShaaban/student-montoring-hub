@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import SectionCard from "./SectionCard";
+import StudentSelector from "./StudentSelector";
 
 function Badge({ children, tone = "slate" }) {
   const tones = {
@@ -23,49 +24,82 @@ function StudentProfileHeader({ student }) {
       title={student.name}
       description="Student behavior, attendance, and intervention notes in one place."
       action={
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-        >
-          Back to dashboard
-        </Link>
+        <div className="flex items-center gap-3">
+          <StudentSelector currentStudentId={student.id} />
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back
+          </Link>
+        </div>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-slate-950 text-2xl font-bold text-white shadow-lg shadow-slate-950/15">
+      {/* Main Layout: Changed to a grid for better spacing on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        {/* Left Section: Avatar and Info (takes 8 columns) */}
+        <div className="lg:col-span-8 flex flex-col sm:flex-row gap-8 items-start">
+          {/* Avatar: Fixed size, no shrinking */}
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-slate-950 text-3xl font-bold text-white shadow-xl shadow-slate-950/20">
             {student.initials}
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
+          {/* Student Details */}
+          <div className="min-w-0 flex-1 space-y-6">
+            {/* Badges Row */}
+            <div className="flex flex-wrap items-center gap-3">
               <Badge tone="sky">Grade: {student.grade}</Badge>
               <Badge tone="green">{student.riskLevel} risk</Badge>
               <Badge tone="slate">Homeroom: {student.className}</Badge>
             </div>
 
-            <dl className="mt-5 grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
-              <div>
-                <dt className="font-medium text-slate-500">Student ID:</dt>
-                <dd className="mt-1 text-base font-medium text-slate-950">
+            {/* Detailed Info Grid: Increased gap and added more structure */}
+            <dl className="grid gap-y-6 gap-x-12 sm:grid-cols-2">
+              <div className="flex flex-col gap-1">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Student ID
+                </dt>
+                <dd className="text-base font-medium text-slate-950">
                   {student.id}
                 </dd>
               </div>
-              <div>
-                <dt className="font-medium text-slate-500">Email:</dt>
-                <dd className="mt-1 break-all text-base font-medium text-slate-950">
+
+              <div className="flex flex-col gap-1">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Email Address
+                </dt>
+                <dd className="text-base font-medium text-slate-950 break-all">
                   {student.email}
                 </dd>
               </div>
-              <div>
-                <dt className="font-medium text-slate-500">Enrollment date:</dt>
-                <dd className="mt-1 text-base font-medium text-slate-950">
+
+              <div className="flex flex-col gap-1">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Enrollment Date
+                </dt>
+                <dd className="text-base font-medium text-slate-950">
                   {student.enrollmentDate}
                 </dd>
               </div>
-              <div>
-                <dt className="font-medium text-slate-500">Quick summary:</dt>
-                <dd className="mt-1 text-base font-medium text-slate-950">
+
+              <div className="flex flex-col gap-1">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Quick Summary
+                </dt>
+                <dd className="text-base font-medium text-slate-950 leading-relaxed">
                   Current support plan with active monitoring.
                 </dd>
               </div>
@@ -73,15 +107,23 @@ function StudentProfileHeader({ student }) {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-          <p className="text-sm font-medium text-slate-500">Focus area:</p>
-          <p className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
-            {student.riskLevel} support
-          </p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Use the behavior and notes tabs to track interventions, family
-            follow-up, and progress.
-          </p>
+        {/* Right Section: Focus Area (takes 4 columns) */}
+        <div className="lg:col-span-4">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                Focus area
+              </p>
+            </div>
+            <p className="text-2xl font-bold tracking-tight text-slate-950 mb-3">
+              {student.riskLevel} support
+            </p>
+            <p className="text-sm leading-relaxed text-slate-600">
+              Use the behavior and notes tabs to track interventions, family
+              follow-up, and progress.
+            </p>
+          </div>
         </div>
       </div>
     </SectionCard>
