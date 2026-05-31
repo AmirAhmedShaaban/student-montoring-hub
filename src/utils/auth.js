@@ -1,11 +1,8 @@
 export {
-  getCurrentUser as getStoredSession,
-  getCurrentUser as getCurrentUser,
-  getLoginHint,
-  getPasswordStrength,
+  getCurrentUser,
   isAuthenticated,
-  login as signInWithDummyCredentials,
-  logout as signOut,
-  register as registerDummyUser,
+  login,
+  register,
+  logout,
+  getPasswordStrength,
 } from "../services/authService";
-

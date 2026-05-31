@@ -1,32 +1,100 @@
 import { useEffect, useId, useState } from "react";
-import { Button, Card, SectionHeader, TextInput } from "./SettingsUI";
-import { updateProfile } from "../../../services/currentUserService";
+import {
+  Button,
+  Card,
+  SectionHeader,
+  SelectField,
+  TextInput,
+  ToggleSwitch,
+} from "./SettingsUI";
+import { updateAdminProfile } from "../../../services/settingsService";
+import {
+  refreshSession,
+  updateProfile,
+} from "../../../services/currentUserService";
 
-function ProfileInfoSection({ profile }) {
+function ProfileInfoSection({
+  profile,
+  userId,
+  languageOptions,
+  resolveLanguageValue,
+  onProfileUpdated,
+}) {
   const fullNameId = useId();
   const emailId = useId();
   const roleId = useId();
+  const languageId = useId();
 
   const [formData, setFormData] = useState({
-    fullName: profile.fullName,
-    email: profile.email,
+    fullname: "",
+    email: "",
+    language: 0,
+    emailNotificationsEnabled: true,
+    pushNotificationsEnabled: true,
   });
-  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null); // { type: "success"|"error", text }
 
+  /* ---- sync form when profile loads or changes ---- */
   useEffect(() => {
+    if (!profile) return;
     setFormData({
-      fullName: profile.fullName,
-      email: profile.email,
+      fullname: profile.fullname || profile.fullName || "",
+      email: profile.email || "",
+      language: resolveLanguageValue(profile.language),
+      emailNotificationsEnabled: profile.emailNotificationsEnabled ?? true,
+      pushNotificationsEnabled: profile.pushNotificationsEnabled ?? true,
     });
-  }, [profile.fullName, profile.email]);
+  }, [profile, resolveLanguageValue]);
 
-  const handleSubmit = (event) => {
+  /* ---- avatar helpers ---- */
+  const avatarLabel =
+    (profile?.fullname || profile?.fullName || "U")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "??";
+
+  const roleDisplay = profile?.role || "User";
+
+  /* ---- submit ---- */
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    updateProfile({
-      name: formData.fullName,
-      email: formData.email,
-    });
-    setMessage("Profile changes saved in the local state.");
+    setSaving(true);
+    setMessage(null);
+
+    const payload = {
+      fullname: formData.fullname.trim(),
+      language: formData.language,
+      emailNotificationsEnabled: formData.emailNotificationsEnabled,
+      pushNotificationsEnabled: formData.pushNotificationsEnabled,
+    };
+
+    const res = await updateAdminProfile(userId, payload);
+
+    if (res.success) {
+      const newName = formData.fullname.trim();
+
+      // Merge server response into local state
+      if (res.data) {
+        onProfileUpdated(res.data);
+      }
+
+      // Update the localStorage session so the sidebar reflects the new name
+      updateProfile({ name: newName });
+      refreshSession();
+
+      setMessage({ type: "success", text: res.message || "Profile saved." });
+    } else {
+      setMessage({
+        type: "error",
+        text: res.message || "Failed to save profile.",
+      });
+    }
+
+    setSaving(false);
   };
 
   return (
@@ -36,36 +104,34 @@ function ProfileInfoSection({ profile }) {
         description="Keep your staff identity details accurate for communication."
       />
 
+      {/* avatar row */}
       <div className="flex items-center gap-4 pt-5">
         <div
-          className={`flex h-16 w-16 items-center justify-center rounded-3xl text-lg font-semibold text-white shadow-sm ${profile.avatarColor}`}
+          className="flex h-16 w-16 items-center justify-center rounded-3xl bg-sky-600 text-lg font-semibold text-white shadow-sm"
           aria-hidden="true"
         >
-          {profile.avatarLabel}
+          {avatarLabel}
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-950">
-            {profile.fullName}
+            {profile?.fullname || profile?.fullName || "—"}
           </p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            {profile.role}
-          </p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{roleDisplay}</p>
         </div>
       </div>
 
+      {/* form */}
       <form className="pt-5" onSubmit={handleSubmit}>
         <div className="grid gap-4 sm:grid-cols-2">
           <TextInput
             id={fullNameId}
             label="Full name"
-            value={formData.fullName}
+            value={formData.fullname}
             onChange={(event) =>
-              setFormData((current) => ({
-                ...current,
-                fullName: event.target.value,
-              }))
+              setFormData((prev) => ({ ...prev, fullname: event.target.value }))
             }
             autoComplete="name"
+            required
           />
 
           <TextInput
@@ -73,14 +139,28 @@ function ProfileInfoSection({ profile }) {
             label="Email address"
             type="email"
             value={formData.email}
-            onChange={(event) =>
-              setFormData((current) => ({
-                ...current,
-                email: event.target.value,
-              }))
-            }
+            disabled
+            description="Email is managed by your account and cannot be changed here."
             autoComplete="email"
           />
+
+          <SelectField
+            id={languageId}
+            label="Language"
+            value={formData.language}
+            onChange={(event) =>
+              setFormData((prev) => ({
+                ...prev,
+                language: Number(event.target.value),
+              }))
+            }
+          >
+            {languageOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </SelectField>
 
           <div className="space-y-2">
             <label
@@ -93,17 +173,55 @@ function ProfileInfoSection({ profile }) {
               id={roleId}
               className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800"
             >
-              {profile.role}
+              {roleDisplay}
             </div>
+          </div>
+
+          {/* notification toggles — full width */}
+          <div className="sm:col-span-2 space-y-3">
+            <ToggleSwitch
+              id="email-notifications"
+              label="Email notifications"
+              description="Receive intervention alerts and weekly summaries by email."
+              checked={formData.emailNotificationsEnabled}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  emailNotificationsEnabled: e.target.checked,
+                }))
+              }
+            />
+            <ToggleSwitch
+              id="push-notifications"
+              label="Push notifications"
+              description="Receive real-time alerts while using the dashboard."
+              checked={formData.pushNotificationsEnabled}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  pushNotificationsEnabled: e.target.checked,
+                }))
+              }
+            />
           </div>
         </div>
 
+        {/* feedback + submit row */}
         <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-slate-500" aria-live="polite">
-              {message || "Update your staff contact details here."}
+          <p
+            className={`text-sm leading-6 ${
+              message?.type === "error"
+                ? "text-rose-600 font-medium"
+                : message?.type === "success"
+                  ? "text-emerald-600 font-medium"
+                  : "text-slate-500"
+            }`}
+            aria-live="polite"
+          >
+            {message?.text || "Update your staff contact details here."}
           </p>
-          <Button type="submit" variant="primary">
-            Save changes
+          <Button type="submit" variant="primary" disabled={saving}>
+            {saving ? "Saving…" : "Save changes"}
           </Button>
         </div>
       </form>

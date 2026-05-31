@@ -1,7 +1,7 @@
 import { Card, SectionHeader } from "./SettingsUI";
 import ChangePasswordForm from "./ChangePasswordForm";
 
-function PasswordSection({ policy }) {
+function PasswordSection({ userId }) {
   return (
     <Card>
       <SectionHeader
@@ -10,7 +10,7 @@ function PasswordSection({ policy }) {
       />
 
       <div className="pt-5">
-        <ChangePasswordForm minLength={policy.minLength} />
+        <ChangePasswordForm userId={userId} />
       </div>
     </Card>
   );

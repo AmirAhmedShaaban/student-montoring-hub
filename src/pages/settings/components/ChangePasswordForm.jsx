@@ -1,8 +1,10 @@
 import { useId, useState } from "react";
 import { Button, PasswordInput } from "./SettingsUI";
-import { changePassword } from "../../../services/currentUserService";
+import { changeUserPassword } from "../../../services/settingsService";
 
-function ChangePasswordForm({ minLength }) {
+const MIN_PASSWORD_LENGTH = 8;
+
+function ChangePasswordForm({ userId }) {
   const currentPasswordId = useId();
   const newPasswordId = useId();
   const confirmPasswordId = useId();
@@ -12,32 +14,56 @@ function ChangePasswordForm({ minLength }) {
     newPassword: "",
     confirmPassword: "",
   });
-  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null); // { type: "success"|"error", text }
 
   const passwordsMatch =
     formData.newPassword.length > 0 &&
     formData.newPassword === formData.confirmPassword;
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setMessage(null);
 
-    if (formData.newPassword.length < minLength) {
-      setMessage(`New password must be at least ${minLength} characters long.`);
+    if (formData.newPassword.length < MIN_PASSWORD_LENGTH) {
+      setMessage({
+        type: "error",
+        text: `New password must be at least ${MIN_PASSWORD_LENGTH} characters long.`,
+      });
       return;
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setMessage("New password and confirmation do not match.");
+      setMessage({
+        type: "error",
+        text: "New password and confirmation do not match.",
+      });
       return;
     }
 
-    const result = changePassword({
+    setSaving(true);
+
+    const res = await changeUserPassword(userId, {
       currentPassword: formData.currentPassword,
       newPassword: formData.newPassword,
+      confirmPassword: formData.confirmPassword,
     });
 
-    setMessage(result.message);
-    setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    if (res.success) {
+      setMessage({ type: "success", text: res.message || "Password updated." });
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } else {
+      setMessage({
+        type: "error",
+        text: res.message || "Failed to update password.",
+      });
+    }
+
+    setSaving(false);
   };
 
   return (
@@ -47,8 +73,8 @@ function ChangePasswordForm({ minLength }) {
         label="Current password"
         value={formData.currentPassword}
         onChange={(event) =>
-          setFormData((current) => ({
-            ...current,
+          setFormData((prev) => ({
+            ...prev,
             currentPassword: event.target.value,
           }))
         }
@@ -59,11 +85,11 @@ function ChangePasswordForm({ minLength }) {
       <PasswordInput
         id={newPasswordId}
         label="New password"
-        description={`Use at least ${minLength} characters.`}
+        description={`Use at least ${MIN_PASSWORD_LENGTH} characters.`}
         value={formData.newPassword}
         onChange={(event) =>
-          setFormData((current) => ({
-            ...current,
+          setFormData((prev) => ({
+            ...prev,
             newPassword: event.target.value,
           }))
         }
@@ -76,8 +102,8 @@ function ChangePasswordForm({ minLength }) {
         label="Confirm new password"
         value={formData.confirmPassword}
         onChange={(event) =>
-          setFormData((current) => ({
-            ...current,
+          setFormData((prev) => ({
+            ...prev,
             confirmPassword: event.target.value,
           }))
         }
@@ -91,12 +117,21 @@ function ChangePasswordForm({ minLength }) {
       />
 
       <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm leading-6 text-slate-500" aria-live="polite">
-          {message ||
+        <p
+          className={`text-sm leading-6 ${
+            message?.type === "error"
+              ? "text-rose-600 font-medium"
+              : message?.type === "success"
+                ? "text-emerald-600 font-medium"
+                : "text-slate-500"
+          }`}
+          aria-live="polite"
+        >
+          {message?.text ||
             "Keep this password private and avoid using the same one on other systems."}
         </p>
-        <Button type="submit" variant="primary">
-          Update password
+        <Button type="submit" variant="primary" disabled={saving}>
+          {saving ? "Updating…" : "Update password"}
         </Button>
       </div>
     </form>

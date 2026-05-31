@@ -28,7 +28,7 @@ function SettingsHeader({ account }) {
               {account.status}
             </dd>
             <dd className="mt-1 text-sm leading-6 text-slate-600">
-              Joined {account.joinedOn}
+              Language: {account.languageLabel}
             </dd>
           </div>
         </dl>
