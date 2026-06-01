@@ -19,11 +19,115 @@ import RecentIncidentsList from "./components/RecentIncidentsList";
 import StudentProfileHeader from "./components/StudentProfileHeader";
 import StudentTabs from "./components/StudentTabs";
 import StudentAcademicCard from "../dashboard/components/StudentAcademicCard";
+import BehaviorSummaryCards from "./components/BehaviorSummaryCards";
+import BehaviorIncidentsList from "./components/BehaviorIncidentsList";
+import StudentGradesCard from "./components/StudentGradesCard";
 
 import {
   buildStudentProfile,
   STUDENT_PROFILE_TABS,
 } from "./studentProfile.utils";
+
+// ==================== MOCK DATA ====================
+const mockBehaviorSummary = {
+  totalIncidents: 5,
+  pendingIncidents: 3,
+  underReviewIncidents: 2,
+  confirmedIncidents: 0,
+  rejectedIncidents: 0,
+};
+
+const mockIncidents = [
+  {
+    incidentID: 1,
+    studentID: 3,
+    studentName: "Omar Khaled",
+    ruleName: "Sleeping",
+    source: "Camera",
+    detail: "Detected behavior: This rule detects when a student is Sleeping.",
+    confidence: 1.0,
+    occurredAt: "2026-05-07T12:29:35.6945059",
+    reviewStatusDisplay: "Pending",
+  },
+  {
+    incidentID: 2,
+    studentID: 3,
+    studentName: "Omar Khaled",
+    ruleName: "Raising Hand",
+    source: "AI",
+    detail:
+      "Detected behavior: This rule detects when a student is Raising Hand.",
+    confidence: 0.63,
+    occurredAt: "2026-05-07T12:25:36.7751989",
+    reviewStatusDisplay: "Pending",
+  },
+];
+
+// Mock Grades Data
+const mockGrades = [
+  {
+    gradeID: 1,
+    studentID: 1,
+    studentName: "Ahmed Mohamed",
+    subject: "Math",
+    score: 85.5,
+    gradeLabel: "B+",
+    term: "Term 1",
+    academicYear: 2026,
+    date: "2026-01-15T00:00:00",
+  },
+  {
+    gradeID: 2,
+    studentID: 1,
+    studentName: "Ahmed Mohamed",
+    subject: "Science",
+    score: 92.0,
+    gradeLabel: "A",
+    term: "Term 1",
+    academicYear: 2026,
+    date: "2026-01-15T00:00:00",
+  },
+  {
+    gradeID: 3,
+    studentID: 1,
+    studentName: "Ahmed Mohamed",
+    subject: "English",
+    score: 78.0,
+    gradeLabel: "C+",
+    term: "Term 1",
+    academicYear: 2026,
+    date: "2026-01-15T00:00:00",
+  },
+  {
+    gradeID: 4,
+    studentID: 1,
+    studentName: "Ahmed Mohamed",
+    subject: "History",
+    score: 88.5,
+    gradeLabel: "B+",
+    term: "Term 1",
+    academicYear: 2026,
+    date: "2026-01-15T00:00:00",
+  },
+  {
+    gradeID: 5,
+    studentID: 1,
+    studentName: "Ahmed Mohamed",
+    subject: "Arabic",
+    score: 95.0,
+    gradeLabel: "A",
+    term: "Term 1",
+    academicYear: 2026,
+    date: "2026-01-15T00:00:00",
+  },
+];
+
+const mockGradeAverage = {
+  averageScore: 88.1,
+  totalSubjects: 5,
+  highestScore: 95.0,
+  lowestScore: 78.0,
+};
 
 function StudentProfileWorkspace({
   profile,
@@ -91,7 +195,6 @@ function StudentProfileWorkspace({
     if (activeTab === "overview") {
       return (
         <div className="grid gap-6 xl:grid-cols-2">
-          {/* Left Column */}
           <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <ProfileStatCard
@@ -135,9 +238,7 @@ function StudentProfileWorkspace({
             </section>
           </div>
 
-          {/* Right Column */}
           <div className="space-y-6">
-            {/* Latest AI Analysis */}
             <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
               <h2 className="text-lg font-semibold text-slate-950">
                 Latest AI analysis
@@ -179,7 +280,6 @@ function StudentProfileWorkspace({
               </dl>
             </section>
 
-            {/* Academic Card */}
             <StudentAcademicCard academicData={academicData} />
           </div>
         </div>
@@ -188,15 +288,28 @@ function StudentProfileWorkspace({
 
     if (activeTab === "behavior") {
       return (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
-          <DisciplineIncidentsCard
-            count={profile.disciplineIncidents}
-            riskLevel={profile.riskLevel}
-            trend={profile.disciplineTrend}
-            lastIncident={profile.recentIncidents[0]}
-          />
-          <RecentIncidentsList incidents={profile.recentIncidents} />
+        <div className="space-y-8">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
+            <DisciplineIncidentsCard
+              count={profile.disciplineIncidents}
+              riskLevel={profile.riskLevel}
+              trend={profile.disciplineTrend}
+              lastIncident={profile.recentIncidents[0]}
+            />
+            <RecentIncidentsList incidents={profile.recentIncidents} />
+          </div>
+
+          <div className="space-y-6">
+            <BehaviorSummaryCards summary={mockBehaviorSummary} />
+            <BehaviorIncidentsList incidents={mockIncidents} />
+          </div>
         </div>
+      );
+    }
+
+    if (activeTab === "grades") {
+      return (
+        <StudentGradesCard grades={mockGrades} averageData={mockGradeAverage} />
       );
     }
 

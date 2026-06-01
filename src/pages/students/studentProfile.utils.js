@@ -25,6 +25,7 @@ export const NOTES_CATEGORIES = [
 export const STUDENT_PROFILE_TABS = [
   { id: "overview", label: "Overview" },
   { id: "behavior", label: "Behavior" },
+  { id: "grades", label: "Grades" },
   { id: "notes", label: "Notes" },
 ];
 

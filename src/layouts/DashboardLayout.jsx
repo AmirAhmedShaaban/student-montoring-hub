@@ -4,19 +4,138 @@ import { logout, getCurrentUser } from "../services/authService";
 import { useDashboardMockData } from "../mocks/dashboard.mock";
 
 const navigationItems = [
-  { label: "Dashboard", to: "/dashboard" },
-  { label: "Students", to: "/students/1" },
-  { label: "Behavior", to: "/behavior-management" },
-  { label: "Clustering", to: "/clustering" },
-  { label: "Settings", to: "/settings" },
-  { label: "Help", to: "/help" },
+  {
+    label: "Dashboard",
+    to: "/dashboard",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1v-5m0 0l5 5m-5-5v5"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: "Students",
+    to: "/students/1",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M17 20h5v-2a3 3 0 01-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: "Behavior",
+    to: "/behavior-management",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 01-2-2"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: "Clustering",
+    to: "/clustering",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 01-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: "Settings",
+    to: "/settings",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: "Help",
+    to: "/help",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9"
+        />
+      </svg>
+    ),
+  },
 ];
 
 function DashboardLayout() {
   const navigate = useNavigate();
   const dashboardData = useDashboardMockData();
 
-  // Initialize the user state directly using the existing session storage helper
   const [currentUser, setCurrentUser] = useState(() => {
     const session = getCurrentUser();
     return (
@@ -28,12 +147,9 @@ function DashboardLayout() {
     );
   });
 
-  // Effect hook to enforce session guards and handle direct component updates
   useEffect(() => {
     const activeSession = getCurrentUser();
-
     if (!activeSession) {
-      // Security Layer: Kick back to login if session key gets wiped unexpectedly
       navigate("/login", { replace: true });
     } else {
       setCurrentUser(activeSession);
@@ -42,79 +158,63 @@ function DashboardLayout() {
 
   const handleSignOut = async () => {
     try {
-      // Fire real async HTTP clear sequence against SmarterASP.NET backend
       await logout();
     } catch (error) {
-      console.error(
-        "Session destruction execution trace sync exception:",
-        error,
-      );
+      console.error("Logout error:", error);
     } finally {
-      // Hard routing push to gateway ensuring memory context drops the current layout
       navigate("/login", { replace: true });
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 lg:flex">
-      <aside className="border-r border-slate-200 bg-slate-950 text-slate-100 lg:sticky lg:top-0 lg:h-screen lg:w-72">
+      {/* Sidebar - Glassy & Elegant */}
+      <aside className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-800 bg-[#020618] text-slate-100">
         <div className="flex h-full flex-col p-6">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500 font-semibold text-white">
-                <img
-                  src="/logo.png"
-                  alt="logo"
-                  className="h-6 w-6 object-contain"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-300">
-                  Student Behavior
-                </p>
-                <h1 className="text-lg font-semibold text-white">
-                  Monitoring Hub
-                </h1>
-              </div>
-            </div>
-            <p className="mt-5 text-sm leading-6 text-slate-400">
-              Monitor attendance, behavior incidents, and intervention activity.
-            </p>
+          {/* Logo */}
+          <div className="flex justify-center mb-10">
+            <img
+              src="/Logo.png"
+              alt="Student Behavior Monitoring"
+              className="h-20 w-auto object-contain"
+            />
           </div>
 
-          <nav className="mt-8 flex-1" aria-label="Dashboard navigation">
-            <ul className="space-y-2">
+          {/* Navigation */}
+          <nav className="flex-1" aria-label="Dashboard navigation">
+            <ul className="space-y-1">
               {navigationItems.map((item) => (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
                     className={({ isActive }) =>
                       [
-                        "block rounded-2xl px-4 py-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400",
+                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all",
                         isActive
-                          ? "bg-white text-slate-950"
-                          : "text-slate-300 hover:bg-slate-900 hover:text-white",
+                          ? "bg-white text-slate-950 shadow-sm"
+                          : "text-slate-300 hover:bg-slate-800 hover:text-white",
                       ].join(" ")
                     }
                   >
-                    {item.label}
+                    {item.icon}
+                    <span>{item.label}</span>
                   </NavLink>
                 </li>
               ))}
             </ul>
           </nav>
 
-          <div className="space-y-4 rounded-3xl bg-slate-900 p-4 text-sm text-slate-300">
+          {/* User Info */}
+          <div className="mt-auto space-y-4 rounded-3xl bg-slate-800 p-5 text-sm">
             <div>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between">
                 <p className="font-medium text-white">Signed in as</p>
-                {/* Dynamic Role Badge mapping straight from live storage */}
-                <span className="rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-semibold text-sky-400 border border-sky-500/20 uppercase tracking-wider">
+                <span className="rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-semibold text-sky-400 border border-sky-500/20">
                   {currentUser.role}
                 </span>
               </div>
               <p
-                className="mt-2 leading-6 font-semibold text-white truncate"
+                className="mt-2 font-semibold text-white truncate"
                 title={currentUser.name}
               >
                 {currentUser.name}
@@ -128,29 +228,17 @@ function DashboardLayout() {
             </div>
 
             <button
-              type="button"
               onClick={handleSignOut}
-              className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+              className="w-full rounded-2xl border border-slate-700 py-2.5 text-sm font-semibold text-white transition hover:border-slate-600 hover:bg-slate-700"
             >
               Sign out
             </button>
-
-            <div>
-              <p className="font-medium text-white">Today&apos;s snapshot</p>
-              <p className="mt-2 leading-6 text-slate-400 text-xs">
-                Review {dashboardData?.summary?.atRiskStudents || 0} at-risk
-                students, {dashboardData?.summary?.pendingFollowUps || 0}{" "}
-                pending follow-ups,{" "}
-                {dashboardData?.summary?.activeInterventions || 0} active
-                interventions, and {dashboardData?.summary?.flaggedCases || 0}{" "}
-                flagged cases.
-              </p>
-            </div>
           </div>
         </div>
       </aside>
 
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      {/* Main Content */}
+      <main className="flex-1 lg:pl-80 px-6 py-6 sm:px-8 lg:py-8">
         <Outlet />
       </main>
     </div>
