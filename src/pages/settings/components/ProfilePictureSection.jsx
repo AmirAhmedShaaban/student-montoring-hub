@@ -1,15 +1,27 @@
 import { useRef, useState } from "react";
+
 import { Button, Card, SectionHeader } from "./SettingsUI";
+
 import {
   uploadProfilePicture,
   deleteProfilePicture,
 } from "../../../services/settingsService";
+
+import { updateProfile } from "../../../services/authService";
+
+const IMAGE_BASE_URL = "http://studentmonitor.runasp.net/";
 
 function ProfilePictureSection({ currentPicture, userName, onPictureUpdated }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [message, setMessage] = useState(null);
+
+  const getFullImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    return `${IMAGE_BASE_URL}${path}`;
+  };
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
@@ -24,8 +36,12 @@ function ProfilePictureSection({ currentPicture, userName, onPictureUpdated }) {
     const res = await uploadProfilePicture(formData);
 
     if (res.success) {
-      // Instead of passing a URL, we trigger a profile refresh in the parent
-      onPictureUpdated();
+      const uploadedUrl = res.data; // Full URL من الـ API
+
+      updateProfile({ profilePicture: uploadedUrl });
+
+      onPictureUpdated({ profilePicture: uploadedUrl });
+
       setMessage({ type: "success", text: "Picture updated successfully." });
     } else {
       setMessage({ type: "error", text: res.message || "Upload failed." });
@@ -42,7 +58,9 @@ function ProfilePictureSection({ currentPicture, userName, onPictureUpdated }) {
     const res = await deleteProfilePicture();
 
     if (res.success) {
-      onPictureUpdated(); // Trigger refresh to remove image from UI
+      updateProfile({ profilePicture: null });
+      onPictureUpdated({ profilePicture: null });
+
       setMessage({ type: "success", text: "Picture removed." });
     } else {
       setMessage({
@@ -74,7 +92,7 @@ function ProfilePictureSection({ currentPicture, userName, onPictureUpdated }) {
         <div className="shrink-0">
           {currentPicture ? (
             <img
-              src={currentPicture}
+              src={getFullImageUrl(currentPicture)}
               alt="Profile"
               className="h-20 w-20 rounded-3xl object-cover shadow-sm"
             />

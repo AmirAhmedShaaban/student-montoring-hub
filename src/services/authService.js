@@ -61,7 +61,7 @@ export async function login(email, password) {
 
     if (result && result.succeeded) {
       const serverData = result.data || {};
-      const token = serverData.token; // Directly from result.data.token
+      const token = serverData.token;
 
       if (!token) {
         return {
@@ -73,7 +73,17 @@ export async function login(email, password) {
       window.localStorage.setItem(TOKEN_KEY, token);
 
       const jwtRole = extractRoleFromJwt(token);
-      const role = jwtRole || serverData.role || serverData.Role || "Staff";
+
+      let role;
+      if (Array.isArray(serverData.roles) && serverData.roles.length > 0) {
+        role = serverData.roles[0];
+      } else if (serverData.role) {
+        role = serverData.role;
+      } else if (serverData.Role) {
+        role = serverData.Role;
+      } else if (jwtRole) {
+        role = jwtRole;
+      }
 
       const session = {
         userId: serverData.id,
@@ -81,12 +91,14 @@ export async function login(email, password) {
         email: email.trim().toLowerCase(),
         role,
         token,
+        profilePicture: serverData.profilePicture || null, // ← مهم
         signedInAt: new Date().toISOString(),
       };
 
       writeJsonValue(AUTH_STORAGE_KEY, session);
       return { success: true, session };
     }
+
     return {
       success: false,
       message: result.message || "Invalid credentials.",
@@ -131,12 +143,14 @@ export async function register(userData) {
         email: userData.email.trim().toLowerCase(),
         role,
         token: token ?? null,
+        profilePicture: serverData.profilePicture || null,
         signedInAt: new Date().toISOString(),
       };
 
       writeJsonValue(AUTH_STORAGE_KEY, session);
       return { success: true };
     }
+
     return {
       success: false,
       message: result.message || "Registration failed.",
@@ -158,6 +172,21 @@ export async function logout() {
   }
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
   window.localStorage.removeItem(TOKEN_KEY);
+}
+
+export function updateProfile(profileUpdates) {
+  const session = getCurrentUser();
+  if (!session) {
+    return { success: false, message: "No active session found." };
+  }
+
+  const updatedSession = {
+    ...session,
+    ...profileUpdates,
+  };
+
+  writeJsonValue(AUTH_STORAGE_KEY, updatedSession);
+  return { success: true, session: updatedSession };
 }
 
 export function getPasswordStrength(password) {

@@ -38,7 +38,7 @@ function sessionToProfile(s) {
     language: "en",
     emailNotificationsEnabled: true,
     pushNotificationsEnabled: true,
-    profilePhotoPath: null, // Changed from profilePicture to profilePhotoPath
+    profilePicture: s.profilePicture || null,
   };
 }
 
@@ -133,11 +133,12 @@ function SettingsPage() {
           account profile has not been configured on the server yet.
         </div>
       )}
+
       <div className="space-y-6">
         <ProfilePictureSection
-          currentPicture={profile?.profilePhotoPath ?? null} // Changed to profilePhotoPath
+          currentPicture={profile?.profilePicture ?? null}
           userName={profile?.fullname || session?.name || ""}
-          onPictureUpdated={fetchProfile}
+          onPictureUpdated={handleProfileUpdated}
         />
         <ProfileInfoSection
           key={profile?.fullname || "default"}

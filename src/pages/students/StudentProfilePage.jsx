@@ -22,6 +22,7 @@ import StudentAcademicCard from "../dashboard/components/StudentAcademicCard";
 import BehaviorSummaryCards from "./components/BehaviorSummaryCards";
 import BehaviorIncidentsList from "./components/BehaviorIncidentsList";
 import StudentGradesCard from "./components/StudentGradesCard";
+import StudentAttendanceCard from "./components/StudentAttendanceCard";
 
 import {
   buildStudentProfile,
@@ -63,7 +64,6 @@ const mockIncidents = [
   },
 ];
 
-// Mock Grades Data
 const mockGrades = [
   {
     gradeID: 1,
@@ -127,6 +127,51 @@ const mockGradeAverage = {
   totalSubjects: 5,
   highestScore: 95.0,
   lowestScore: 78.0,
+};
+
+// Mock Attendance Data
+const mockAttendanceRecords = [
+  {
+    attendanceID: 1,
+    studentID: 1,
+    studentName: "Ahmed Mohamed",
+    attendanceDate: "2026-05-01T00:00:00",
+    checkInTime: "2026-05-01T08:05:00",
+    statusDisplay: "Absent",
+    source: "Camera",
+    lateMinutes: null,
+    confidenceScore: 98.5,
+  },
+  {
+    attendanceID: 2,
+    studentID: 1,
+    studentName: "Ahmed Mohamed",
+    attendanceDate: "2026-05-02T00:00:00",
+    checkInTime: "2026-05-02T08:02:00",
+    statusDisplay: "Absent",
+    source: "Camera",
+    lateMinutes: null,
+    confidenceScore: 95.2,
+  },
+  {
+    attendanceID: 3,
+    studentID: 1,
+    studentName: "Ahmed Mohamed",
+    attendanceDate: "2026-05-03T00:00:00",
+    checkInTime: null,
+    statusDisplay: "Present",
+    source: "Manual",
+    lateMinutes: null,
+    confidenceScore: 0,
+  },
+];
+
+const mockAttendanceSummary = {
+  totalDays: 3,
+  presentDays: 1,
+  absentDays: 2,
+  lateDays: 0,
+  attendancePercentage: 33.3,
 };
 
 function StudentProfileWorkspace({
@@ -310,6 +355,15 @@ function StudentProfileWorkspace({
     if (activeTab === "grades") {
       return (
         <StudentGradesCard grades={mockGrades} averageData={mockGradeAverage} />
+      );
+    }
+
+    if (activeTab === "attendance") {
+      return (
+        <StudentAttendanceCard
+          attendanceRecords={mockAttendanceRecords}
+          summary={mockAttendanceSummary}
+        />
       );
     }
 
