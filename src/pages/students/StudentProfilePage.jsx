@@ -52,6 +52,8 @@ function StudentProfileWorkspace({
   });
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [noteError, setNoteError] = useState("");
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [showMarkAttendanceForm, setShowMarkAttendanceForm] = useState(false);
 
   const handleAddNote = async (event) => {
     event.preventDefault();
@@ -222,10 +224,122 @@ function StudentProfileWorkspace({
 
     if (activeTab === "attendance") {
       return (
-        <StudentAttendanceCard
-          attendanceRecords={attendanceRecords}
-          summary={attendanceSummary}
-        />
+        <div className="space-y-6">
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowRegisterForm(!showRegisterForm)}
+              className="rounded-2xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
+            >
+              {showRegisterForm ? "Close Form" : "+ Register New Student"}
+            </button>
+
+            <button
+              onClick={() => setShowMarkAttendanceForm(!showMarkAttendanceForm)}
+              className="rounded-2xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 transition"
+            >
+              {showMarkAttendanceForm ? "Close Form" : "Mark Attendance"}
+            </button>
+          </div>
+
+          {/* Register Student Form */}
+          {showRegisterForm && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+              <h3 className="text-2xl font-semibold text-slate-950 mb-6">
+                Register New Student
+              </h3>
+              <form className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
+                    Student Code
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
+                    Student Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
+                    Face Image
+                  </label>
+                  <label className="flex items-center justify-center w-full h-14 border border-dashed border-slate-300 rounded-2xl cursor-pointer hover:bg-slate-50 transition">
+                    <span className="text-sm font-medium text-slate-600">
+                      Choose Image
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" />
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  className="w-full rounded-2xl bg-slate-950 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                >
+                  Register Student
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Mark Attendance Form */}
+          {showMarkAttendanceForm && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+              <h3 className="text-2xl font-semibold text-slate-950 mb-6">
+                Mark Attendance
+              </h3>
+              <form className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
+                    Camera Image
+                  </label>
+                  <label className="flex items-center justify-center w-full h-14 border border-dashed border-slate-300 rounded-2xl cursor-pointer hover:bg-slate-50 transition">
+                    <span className="text-sm font-medium text-slate-600">
+                      Choose Image
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" />
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
+                    Scheduled Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
+                    Video Session ID
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="w-full rounded-2xl bg-slate-950 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                >
+                  Submit Attendance
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Attendance Records */}
+          <StudentAttendanceCard
+            attendanceRecords={attendanceRecords}
+            summary={attendanceSummary}
+          />
+        </div>
       );
     }
 
