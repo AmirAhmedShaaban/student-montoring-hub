@@ -8,6 +8,9 @@ import {
   getStudentBehavior,
   getStudentNotes,
   addStudentNote,
+  getAttendanceSummary,
+  getGradesAverage,
+  getBehaviorSummary,
 } from "../../services/studentService";
 import { getStudentAcademic } from "../../services/dashboardService";
 
@@ -29,156 +32,17 @@ import {
   STUDENT_PROFILE_TABS,
 } from "./studentProfile.utils";
 
-// ==================== MOCK DATA ====================
-const mockBehaviorSummary = {
-  totalIncidents: 5,
-  pendingIncidents: 3,
-  underReviewIncidents: 2,
-  confirmedIncidents: 0,
-  rejectedIncidents: 0,
-};
-
-const mockIncidents = [
-  {
-    incidentID: 1,
-    studentID: 3,
-    studentName: "Omar Khaled",
-    ruleName: "Sleeping",
-    source: "Camera",
-    detail: "Detected behavior: This rule detects when a student is Sleeping.",
-    confidence: 1.0,
-    occurredAt: "2026-05-07T12:29:35.6945059",
-    reviewStatusDisplay: "Pending",
-  },
-  {
-    incidentID: 2,
-    studentID: 3,
-    studentName: "Omar Khaled",
-    ruleName: "Raising Hand",
-    source: "AI",
-    detail:
-      "Detected behavior: This rule detects when a student is Raising Hand.",
-    confidence: 0.63,
-    occurredAt: "2026-05-07T12:25:36.7751989",
-    reviewStatusDisplay: "Pending",
-  },
-];
-
-const mockGrades = [
-  {
-    gradeID: 1,
-    studentID: 1,
-    studentName: "Ahmed Mohamed",
-    subject: "Math",
-    score: 85.5,
-    gradeLabel: "B+",
-    term: "Term 1",
-    academicYear: 2026,
-    date: "2026-01-15T00:00:00",
-  },
-  {
-    gradeID: 2,
-    studentID: 1,
-    studentName: "Ahmed Mohamed",
-    subject: "Science",
-    score: 92.0,
-    gradeLabel: "A",
-    term: "Term 1",
-    academicYear: 2026,
-    date: "2026-01-15T00:00:00",
-  },
-  {
-    gradeID: 3,
-    studentID: 1,
-    studentName: "Ahmed Mohamed",
-    subject: "English",
-    score: 78.0,
-    gradeLabel: "C+",
-    term: "Term 1",
-    academicYear: 2026,
-    date: "2026-01-15T00:00:00",
-  },
-  {
-    gradeID: 4,
-    studentID: 1,
-    studentName: "Ahmed Mohamed",
-    subject: "History",
-    score: 88.5,
-    gradeLabel: "B+",
-    term: "Term 1",
-    academicYear: 2026,
-    date: "2026-01-15T00:00:00",
-  },
-  {
-    gradeID: 5,
-    studentID: 1,
-    studentName: "Ahmed Mohamed",
-    subject: "Arabic",
-    score: 95.0,
-    gradeLabel: "A",
-    term: "Term 1",
-    academicYear: 2026,
-    date: "2026-01-15T00:00:00",
-  },
-];
-
-const mockGradeAverage = {
-  averageScore: 88.1,
-  totalSubjects: 5,
-  highestScore: 95.0,
-  lowestScore: 78.0,
-};
-
-// Mock Attendance Data
-const mockAttendanceRecords = [
-  {
-    attendanceID: 1,
-    studentID: 1,
-    studentName: "Ahmed Mohamed",
-    attendanceDate: "2026-05-01T00:00:00",
-    checkInTime: "2026-05-01T08:05:00",
-    statusDisplay: "Absent",
-    source: "Camera",
-    lateMinutes: null,
-    confidenceScore: 98.5,
-  },
-  {
-    attendanceID: 2,
-    studentID: 1,
-    studentName: "Ahmed Mohamed",
-    attendanceDate: "2026-05-02T00:00:00",
-    checkInTime: "2026-05-02T08:02:00",
-    statusDisplay: "Absent",
-    source: "Camera",
-    lateMinutes: null,
-    confidenceScore: 95.2,
-  },
-  {
-    attendanceID: 3,
-    studentID: 1,
-    studentName: "Ahmed Mohamed",
-    attendanceDate: "2026-05-03T00:00:00",
-    checkInTime: null,
-    statusDisplay: "Present",
-    source: "Manual",
-    lateMinutes: null,
-    confidenceScore: 0,
-  },
-];
-
-const mockAttendanceSummary = {
-  totalDays: 3,
-  presentDays: 1,
-  absentDays: 2,
-  lateDays: 0,
-  attendancePercentage: 33.3,
-};
-
 function StudentProfileWorkspace({
   profile,
   latestAnalysis,
   studentId,
   academicData,
+  attendanceRecords,
+  attendanceSummary,
+  grades,
+  gradeAverage,
+  behaviorRecords,
+  behaviorSummary,
 }) {
   const [activeTab, setActiveTab] = useState(STUDENT_PROFILE_TABS[0].id);
   const [notes, setNotes] = useState(profile.notes || []);
@@ -345,24 +209,22 @@ function StudentProfileWorkspace({
           </div>
 
           <div className="space-y-6">
-            <BehaviorSummaryCards summary={mockBehaviorSummary} />
-            <BehaviorIncidentsList incidents={mockIncidents} />
+            <BehaviorSummaryCards summary={behaviorSummary} />
+            <BehaviorIncidentsList incidents={behaviorRecords} />
           </div>
         </div>
       );
     }
 
     if (activeTab === "grades") {
-      return (
-        <StudentGradesCard grades={mockGrades} averageData={mockGradeAverage} />
-      );
+      return <StudentGradesCard grades={grades} averageData={gradeAverage} />;
     }
 
     if (activeTab === "attendance") {
       return (
         <StudentAttendanceCard
-          attendanceRecords={mockAttendanceRecords}
-          summary={mockAttendanceSummary}
+          attendanceRecords={attendanceRecords}
+          summary={attendanceSummary}
         />
       );
     }
@@ -419,6 +281,12 @@ function StudentProfilePage() {
   const dashboardData = useDashboardMockData();
   const [profileData, setProfileData] = useState(null);
   const [academicData, setAcademicData] = useState(null);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [attendanceSummary, setAttendanceSummary] = useState(null);
+  const [grades, setGrades] = useState([]);
+  const [gradeAverage, setGradeAverage] = useState(null);
+  const [behaviorRecords, setBehaviorRecords] = useState([]);
+  const [behaviorSummary, setBehaviorSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -436,6 +304,9 @@ function StudentProfilePage() {
           behaviorRes,
           notesRes,
           academicRes,
+          summaryRes,
+          gradesAverageRes,
+          behaviorSummaryRes,
         ] = await Promise.all([
           getStudentById(targetId),
           getStudentAttendance(targetId),
@@ -443,6 +314,9 @@ function StudentProfilePage() {
           getStudentBehavior(targetId),
           getStudentNotes(targetId),
           getStudentAcademic(targetId),
+          getAttendanceSummary(),
+          getGradesAverage(),
+          getBehaviorSummary(),
         ]);
 
         if (studentRes.success) {
@@ -457,6 +331,39 @@ function StudentProfilePage() {
 
           if (academicRes.success) {
             setAcademicData(academicRes.data);
+          }
+
+          if (attendanceRes.success) {
+            setAttendanceRecords(attendanceRes.data);
+          }
+
+          if (summaryRes.success && summaryRes.data) {
+            const studentSummary = summaryRes.data.find(
+              (item) => item.studentID === targetId,
+            );
+            setAttendanceSummary(studentSummary || null);
+          }
+
+          if (gradesRes.success) {
+            setGrades(gradesRes.data);
+          }
+
+          if (gradesAverageRes.success && gradesAverageRes.data) {
+            const studentGradeAvg = gradesAverageRes.data.find(
+              (item) => item.studentID === targetId,
+            );
+            setGradeAverage(studentGradeAvg || null);
+          }
+
+          if (behaviorRes.success) {
+            setBehaviorRecords(behaviorRes.data);
+          }
+
+          if (behaviorSummaryRes.success && behaviorSummaryRes.data) {
+            const studentBehaviorSummary = behaviorSummaryRes.data.find(
+              (item) => item.studentID === targetId,
+            );
+            setBehaviorSummary(studentBehaviorSummary || null);
           }
         } else {
           setError(
@@ -501,7 +408,7 @@ function StudentProfilePage() {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-5 w-full rounded-2xl bg-slate-950 py-2.5 text-sm font-semibold text-white shadow hover:bg-slate-900 transition"
+            className="mt-5 w-full rounded-2xl bg-slate-950 py-2.5 text-sm font-semibold text-white shadow hover:bg-slate-909 transition"
           >
             Retry Connection
           </button>
@@ -517,6 +424,12 @@ function StudentProfilePage() {
       latestAnalysis={dashboardData.latestAnalysisResult}
       studentId={profileData.id}
       academicData={academicData}
+      attendanceRecords={attendanceRecords}
+      attendanceSummary={attendanceSummary}
+      grades={grades}
+      gradeAverage={gradeAverage}
+      behaviorRecords={behaviorRecords}
+      behaviorSummary={behaviorSummary}
     />
   );
 }

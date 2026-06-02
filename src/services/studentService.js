@@ -6,14 +6,15 @@ import API from "./axiosConfig";
  */
 export async function getAllStudents() {
   try {
-    // Removed /api from start because it's already in axiosConfig baseURL
     const response = await API.get("Students/Get All");
+
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
+
     return {
       success: false,
       data: [],
@@ -36,13 +37,15 @@ export async function getAllStudents() {
  */
 export async function getStudentById(id) {
   try {
-    const response = await API.get(`Students/${id}`);
+    const response = await API.get(`/Students/${id}`);
+
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
+
     return {
       success: false,
       data: null,
@@ -66,13 +69,15 @@ export async function getStudentById(id) {
  */
 export async function getStudentAttendance(id) {
   try {
-    const response = await API.get(`Students/${id}/attendance`);
+    const response = await API.get(`/Attendance/student/${id}`);
+
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
+
     return {
       success: false,
       data: [],
@@ -92,19 +97,53 @@ export async function getStudentAttendance(id) {
 }
 
 /**
- * Fetches a specific student's academic grades by ID
- * @param {string|number} id - The unique ID of the student
+ * Fetches attendance summary for all students
  * @returns {Promise<{success: boolean, data: Array, message?: string}>}
  */
-export async function getStudentGrades(id) {
+export async function getAttendanceSummary() {
   try {
-    const response = await API.get(`Students/${id}/grades`);
+    const response = await API.get("/Attendance/summary");
+
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
+
+    return {
+      success: false,
+      data: [],
+      message: response.data?.message || "Failed to load attendance summary.",
+    };
+  } catch (error) {
+    console.error("Error fetching attendance summary:", error);
+    return {
+      success: false,
+      data: [],
+      message:
+        error.response?.data?.message ||
+        "Server error fetching attendance summary.",
+    };
+  }
+}
+
+/**
+ * Fetches a specific student's academic grades by ID
+ * @param {string|number} id - The unique ID of the student
+ * @returns {Promise<{success: boolean, data: Array, message?: string}>}
+ */
+export async function getStudentGrades(id) {
+  try {
+    const response = await API.get(`/grades/student/${id}`);
+
+    if (response.data && response.data.succeeded) {
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    }
+
     return {
       success: false,
       data: [],
@@ -122,19 +161,53 @@ export async function getStudentGrades(id) {
 }
 
 /**
- * Fetches a specific student's behavior incidents and history by ID
- * @param {string|number} id - The unique ID of the student
+ * Fetches grades average for all students
  * @returns {Promise<{success: boolean, data: Array, message?: string}>}
  */
-export async function getStudentBehavior(id) {
+export async function getGradesAverage() {
   try {
-    const response = await API.get(`Students/${id}/behavior`);
+    const response = await API.get("/grades/average");
+
     if (response.data && response.data.succeeded) {
       return {
         success: true,
         data: response.data.data,
       };
     }
+
+    return {
+      success: false,
+      data: [],
+      message: response.data?.message || "Failed to load grades average.",
+    };
+  } catch (error) {
+    console.error("Error fetching grades average:", error);
+    return {
+      success: false,
+      data: [],
+      message:
+        error.response?.data?.message ||
+        "Server error fetching grades average.",
+    };
+  }
+}
+
+/**
+ * Fetches a specific student's behavior incidents and history by ID
+ * @param {string|number} id - The unique ID of the student
+ * @returns {Promise<{success: boolean, data: Array, message?: string}>}
+ */
+export async function getStudentBehavior(id) {
+  try {
+    const response = await API.get(`/Behavior/student/${id}`);
+
+    if (response.data && response.data.succeeded) {
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    }
+
     return {
       success: false,
       data: [],
@@ -154,6 +227,38 @@ export async function getStudentBehavior(id) {
 }
 
 /**
+ * Fetches behavior incidents summary for all students
+ * @returns {Promise<{success: boolean, data: Array, message?: string}>}
+ */
+export async function getBehaviorSummary() {
+  try {
+    const response = await API.get("/Behavior/summary");
+
+    if (response.data && response.data.succeeded) {
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    }
+
+    return {
+      success: false,
+      data: [],
+      message: response.data?.message || "Failed to load behavior summary.",
+    };
+  } catch (error) {
+    console.error("Error fetching behavior summary:", error);
+    return {
+      success: false,
+      data: [],
+      message:
+        error.response?.data?.message ||
+        "Server error fetching behavior summary.",
+    };
+  }
+}
+
+/**
  * Fetches all notes and filters them for a specific student
  * @param {string|number} studentId - The unique ID of the student
  * @returns {Promise<{success: boolean, data: Array, message?: string}>}
@@ -161,15 +266,14 @@ export async function getStudentBehavior(id) {
 export async function getStudentNotes(studentId) {
   try {
     const response = await API.get("Students/GetAllNotes");
+
     if (response.data && response.data.succeeded) {
       const allNotes = response.data.data || [];
 
-      // Filter and sanitize notes to ensure safe date rendering
       const studentNotes = allNotes
         .filter((note) => note.studentID === studentId)
         .map((note) => ({
           ...note,
-          // Safe date handling
           formattedDate: note.timestamp
             ? new Date(note.timestamp).toLocaleDateString("en-US", {
                 month: "short",
@@ -184,6 +288,7 @@ export async function getStudentNotes(studentId) {
         data: studentNotes,
       };
     }
+
     return { success: false, data: [], message: "Failed to load notes." };
   } catch (error) {
     console.error(`Error fetching notes for student ID ${studentId}:`, error);
@@ -203,7 +308,8 @@ export async function getStudentNotes(studentId) {
  */
 export async function addStudentNote(studentId, noteData) {
   try {
-    const response = await API.post(`Students/${studentId}/notes`, noteData);
+    const response = await API.post(`/Students/${studentId}/notes`, noteData);
+
     if (response.data && response.data.succeeded) {
       return {
         success: true,
@@ -211,6 +317,7 @@ export async function addStudentNote(studentId, noteData) {
         data: response.data.data,
       };
     }
+
     return {
       success: false,
       message: response.data?.message || "Failed to add note.",
@@ -234,7 +341,8 @@ export async function addStudentNote(studentId, noteData) {
  */
 export async function updateStudentNote(noteId, noteData) {
   try {
-    const response = await API.put(`Students/notes/${noteId}`, noteData);
+    const response = await API.put(`/Students/notes/${noteId}`, noteData);
+
     if (response.data && response.data.succeeded) {
       return {
         success: true,
@@ -242,6 +350,7 @@ export async function updateStudentNote(noteId, noteData) {
         data: response.data.data,
       };
     }
+
     return {
       success: false,
       message: response.data?.message || "Failed to update note.",
