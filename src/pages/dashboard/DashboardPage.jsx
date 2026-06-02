@@ -1,3 +1,17 @@
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllStudents } from "../../services/studentService";
@@ -81,22 +95,42 @@ function DashboardPage() {
   });
   const [loadingDashboard, setLoadingDashboard] = useState(true);
 
-  // Academic data
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [academicData, setAcademicData] = useState(null);
   const [loadingAcademic, setLoadingAcademic] = useState(false);
 
-  // Load students for search
+  // ==================== MOCK DATA FOR CHARTS ====================
+  const riskDistribution = [
+    { name: "Low", value: 68 },
+    { name: "Medium", value: 24 },
+    { name: "High", value: 8 },
+  ];
+
+  const attendanceDistribution = [
+    { name: "Ahmed Mohamed", attendance: 92 },
+    { name: "Sara Ali", attendance: 88 },
+    { name: "Omar Khaled", attendance: 75 },
+    { name: "Nour Hassan", attendance: 95 },
+    { name: "Youssef Ibrahim", attendance: 68 },
+  ];
+
+  const topPerformers = [
+    { name: "Hassan Farouk", average: 96 },
+    { name: "Sara Ali", average: 93.7 },
+    { name: "Mariam Said", average: 89.8 },
+    { name: "Nour Hassan", average: 88.2 },
+    { name: "Ahmed Mohamed", average: 88.1 },
+  ];
+
+  // ==================== EXISTING LOGIC ====================
   useEffect(() => {
     async function fetchStudents() {
       try {
         setIsLoadingStudents(true);
         const res = await getAllStudents();
-        if (res.success) {
-          setStudentsList(res.data);
-        }
+        if (res.success) setStudentsList(res.data);
       } catch (error) {
-        console.error("Error loading students for search:", error);
+        console.error("Error loading students:", error);
       } finally {
         setIsLoadingStudents(false);
       }
@@ -104,11 +138,9 @@ function DashboardPage() {
     fetchStudents();
   }, []);
 
-  // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoadingDashboard(true);
-
       const [statsRes, attendanceRes] = await Promise.all([
         getDashboardStats(),
         getAllAttendanceCounts(),
@@ -116,10 +148,8 @@ function DashboardPage() {
 
       if (statsRes.success) setStats(statsRes.data);
       if (attendanceRes.success) setAttendance(attendanceRes.data);
-
       setLoadingDashboard(false);
     };
-
     fetchDashboardData();
   }, []);
 
@@ -139,18 +169,12 @@ function DashboardPage() {
     if (student) {
       setSelectedStudent(student);
       setSearchMessage({ type: "success", text: "Student found." });
-
       setLoadingAcademic(true);
       const academicRes = await getStudentAcademic(student.studentID);
-      if (academicRes.success) {
-        setAcademicData(academicRes.data);
-      }
+      if (academicRes.success) setAcademicData(academicRes.data);
       setLoadingAcademic(false);
     } else {
-      setSearchMessage({
-        type: "error",
-        text: "Student not found. Please try another name or ID.",
-      });
+      setSearchMessage({ type: "error", text: "Student not found." });
     }
   };
 
@@ -174,7 +198,7 @@ function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header + Search */}
       <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -218,7 +242,6 @@ function DashboardPage() {
                 Search
               </button>
             </div>
-
             {searchMessage && (
               <p
                 className={`mt-2 text-sm font-medium ${searchMessage.type === "success" ? "text-emerald-600" : "text-rose-600"}`}
@@ -230,7 +253,7 @@ function DashboardPage() {
         </div>
       </section>
 
-      {/* Academic Card - Dynamic on Search */}
+      {/* Academic Card */}
       {selectedStudent && (
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
@@ -248,7 +271,6 @@ function DashboardPage() {
               Clear
             </button>
           </div>
-
           {loadingAcademic ? (
             <div className="flex h-40 items-center justify-center rounded-3xl border border-slate-200 bg-white">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
@@ -293,6 +315,88 @@ function DashboardPage() {
       </DashboardCard>
 
       <AIUploadCard />
+
+      {/* Charts Section */}
+      <div className="grid gap-6 xl:grid-cols-12">
+        {/* Risk Distribution */}
+        <div className="xl:col-span-4">
+          <DashboardCard
+            title="Risk Distribution"
+            description="Student risk levels"
+          >
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <defs>
+                    <linearGradient id="riskGrad1" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#DA11CB" />
+                      <stop offset="100%" stopColor="#6665D8" />
+                    </linearGradient>
+                    <linearGradient id="riskGrad2" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#6665D8" />
+                      <stop offset="100%" stopColor="#003CFF" />
+                    </linearGradient>
+                    <linearGradient id="riskGrad3" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#003CFF" />
+                      <stop offset="100%" stopColor="#0090FF" />
+                    </linearGradient>
+                  </defs>
+                  <Pie
+                    data={riskDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={90}
+                    dataKey="value"
+                  >
+                    <Cell fill="url(#riskGrad1)" />
+                    <Cell fill="url(#riskGrad2)" />
+                    <Cell fill="url(#riskGrad3)" />
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </DashboardCard>
+        </div>
+
+        {/* Attendance Distribution */}
+        <div className="xl:col-span-8">
+          <DashboardCard
+            title="Attendance Distribution"
+            description="Top students by attendance"
+          >
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={attendanceDistribution}>
+                  <defs>
+                    {/* Vibrant SaaS gradient for attendance bars */}
+                    <linearGradient
+                      id="attendanceGrad"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="0%" stopColor="#36d1dc" />
+                      <stop offset="100%" stopColor="#5b86e5" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" stroke="#64748b" />
+                  <YAxis domain={[50, 100]} stroke="#64748b" />
+                  <Tooltip />
+                  <Bar
+                    dataKey="attendance"
+                    fill="url(#attendanceGrad)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </DashboardCard>
+        </div>
+      </div>
 
       {/* Student Summary + Attendance + Intervention */}
       <div className="grid gap-6 xl:grid-cols-12">
@@ -357,47 +461,6 @@ function DashboardPage() {
               </div>
             </dl>
           </DashboardCard>
-
-          <DashboardCard
-            title="Attendance"
-            description="Current attendance overview"
-          >
-            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="rounded-3xl bg-slate-950 p-6 text-white">
-                <p className="text-sm font-medium text-slate-300">
-                  Overall attendance
-                </p>
-                <p className="mt-3 text-5xl font-semibold tracking-tight">
-                  {stats?.presentStudents || 0}%
-                </p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">
-                  {attendance.present} present, {attendance.late} late,{" "}
-                  {attendance.absent} absent.
-                </p>
-              </div>
-
-              <ul className="space-y-4">
-                <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-600">Present</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {attendance.present}
-                  </p>
-                </li>
-                <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-600">Late</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {attendance.late}
-                  </p>
-                </li>
-                <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-600">Absent</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {attendance.absent}
-                  </p>
-                </li>
-              </ul>
-            </div>
-          </DashboardCard>
         </div>
 
         <div className="space-y-6 xl:col-span-5">
@@ -430,6 +493,89 @@ function DashboardPage() {
                 detail="Top performers"
                 accent="bg-sky-50 text-sky-700 ring-sky-100"
               />
+            </div>
+          </DashboardCard>
+        </div>
+      </div>
+
+      {/* Attendance + Top Performers Side by Side */}
+      <div className="grid gap-6 xl:grid-cols-12">
+        {/* Attendance */}
+        <div className="xl:col-span-6">
+          <DashboardCard
+            title="Attendance"
+            description="Current attendance overview"
+          >
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-3xl bg-slate-950 p-6 text-white">
+                <p className="text-sm font-medium text-slate-300">
+                  Overall attendance
+                </p>
+                <p className="mt-3 text-5xl font-semibold tracking-tight">
+                  {stats?.presentStudents || 0}%
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {attendance.present} present, {attendance.late} late,{" "}
+                  {attendance.absent} absent.
+                </p>
+              </div>
+              <ul className="space-y-4">
+                <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-medium text-slate-600">Present</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">
+                    {attendance.present}
+                  </p>
+                </li>
+                <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-medium text-slate-600">Late</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">
+                    {attendance.late}
+                  </p>
+                </li>
+                <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-medium text-slate-600">Absent</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">
+                    {attendance.absent}
+                  </p>
+                </li>
+              </ul>
+            </div>
+          </DashboardCard>
+        </div>
+
+        {/* Top Performers (Honor Roll) */}
+        <div className="xl:col-span-6">
+          <DashboardCard
+            title="Top Performers (Honor Roll)"
+            description="Highest academic averages"
+          >
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topPerformers}>
+                  <defs>
+                    {/* Futuristic/Neon gradient for top performers bars */}
+                    <linearGradient
+                      id="topPerformersGrad"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="0%" stopColor="#4568DC" />
+                      <stop offset="100%" stopColor="#B06AB3" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" stroke="#64748b" />
+                  <YAxis domain={[80, 100]} stroke="#64748b" />
+                  <Tooltip />
+                  <Bar
+                    dataKey="average"
+                    fill="url(#topPerformersGrad)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </DashboardCard>
         </div>
