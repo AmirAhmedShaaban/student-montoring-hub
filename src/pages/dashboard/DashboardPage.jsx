@@ -26,6 +26,9 @@ import {
   getDashboardStats,
   getAllAttendanceCounts,
   getStudentAcademic,
+  getBehaviorSummary,
+  getAttendanceSummary,
+  getGradesAverage,
 } from "../../services/dashboardService";
 
 const actionIcons = {
@@ -79,6 +82,76 @@ const actionIcons = {
   ),
 };
 
+// ==================== RISK THRESHOLDS ====================
+// The behavior summary endpoint does not return an explicit risk level,
+// so we derive it from each student's total incidents count.
+//   0 incidents     -> Low
+//   1-2 incidents   -> Medium
+//   3 or more       -> High
+const RISK_THRESHOLDS = {
+  mediumMin: 1,
+  highMin: 3,
+};
+
+// ==================== DATA NORMALIZERS ====================
+
+// Build the Risk Distribution dataset (Low / Medium / High) from the
+// behavior summary array using each student's totalIncidents count.
+function normalizeRiskDistribution(rawList) {
+  if (!Array.isArray(rawList)) return [];
+
+  const counts = { Low: 0, Medium: 0, High: 0 };
+  rawList.forEach((item) => {
+    const incidents = Number(item?.totalIncidents) || 0;
+    if (incidents >= RISK_THRESHOLDS.highMin) counts.High += 1;
+    else if (incidents >= RISK_THRESHOLDS.mediumMin) counts.Medium += 1;
+    else counts.Low += 1;
+  });
+
+  const distribution = [
+    { name: "Low", value: counts.Low },
+    { name: "Medium", value: counts.Medium },
+    { name: "High", value: counts.High },
+  ];
+  return distribution.some((d) => d.value > 0) ? distribution : [];
+}
+
+// Build the Attendance Distribution dataset (top students by attendance %).
+function normalizeAttendanceDistribution(rawList) {
+  if (!Array.isArray(rawList)) return [];
+
+  return rawList
+    .map((item) => ({
+      name: item?.studentName || "Unknown",
+      attendance: Number(item?.attendancePercentage) || 0,
+    }))
+    .sort((a, b) => b.attendance - a.attendance)
+    .slice(0, 5);
+}
+
+// Build the Top Performers dataset (top students by academic average).
+function normalizeTopPerformers(rawList) {
+  if (!Array.isArray(rawList)) return [];
+
+  return rawList
+    .map((item) => ({
+      name: item?.studentName || "Unknown",
+      average: Number(item?.averageScore) || 0,
+    }))
+    .filter((d) => d.average > 0)
+    .sort((a, b) => b.average - a.average)
+    .slice(0, 5);
+}
+
+// Small empty-state placeholder shown when a chart has no data.
+function ChartEmptyState({ message = "No data available" }) {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <p className="text-sm text-slate-400">{message}</p>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const navigate = useNavigate();
 
@@ -99,28 +172,11 @@ function DashboardPage() {
   const [academicData, setAcademicData] = useState(null);
   const [loadingAcademic, setLoadingAcademic] = useState(false);
 
-  // ==================== MOCK DATA FOR CHARTS ====================
-  const riskDistribution = [
-    { name: "Low", value: 68 },
-    { name: "Medium", value: 24 },
-    { name: "High", value: 8 },
-  ];
-
-  const attendanceDistribution = [
-    { name: "Ahmed Mohamed", attendance: 92 },
-    { name: "Sara Ali", attendance: 88 },
-    { name: "Omar Khaled", attendance: 75 },
-    { name: "Nour Hassan", attendance: 95 },
-    { name: "Youssef Ibrahim", attendance: 68 },
-  ];
-
-  const topPerformers = [
-    { name: "Hassan Farouk", average: 96 },
-    { name: "Sara Ali", average: 93.7 },
-    { name: "Mariam Said", average: 89.8 },
-    { name: "Nour Hassan", average: 88.2 },
-    { name: "Ahmed Mohamed", average: 88.1 },
-  ];
+  // ==================== CHART DATA (FROM BACKEND) ====================
+  const [riskDistribution, setRiskDistribution] = useState([]);
+  const [attendanceDistribution, setAttendanceDistribution] = useState([]);
+  const [topPerformers, setTopPerformers] = useState([]);
+  const [loadingCharts, setLoadingCharts] = useState(true);
 
   // ==================== EXISTING LOGIC ====================
   useEffect(() => {
@@ -151,6 +207,33 @@ function DashboardPage() {
       setLoadingDashboard(false);
     };
     fetchDashboardData();
+  }, []);
+
+  // Fetch and normalize the data behind the three charts.
+  useEffect(() => {
+    const fetchChartsData = async () => {
+      setLoadingCharts(true);
+      const [behaviorRes, attendanceSummaryRes, gradesRes] = await Promise.all([
+        getBehaviorSummary(),
+        getAttendanceSummary(),
+        getGradesAverage(),
+      ]);
+
+      if (behaviorRes.success) {
+        setRiskDistribution(normalizeRiskDistribution(behaviorRes.data));
+      }
+      if (attendanceSummaryRes.success) {
+        setAttendanceDistribution(
+          normalizeAttendanceDistribution(attendanceSummaryRes.data),
+        );
+      }
+      if (gradesRes.success) {
+        setTopPerformers(normalizeTopPerformers(gradesRes.data));
+      }
+
+      setLoadingCharts(false);
+    };
+    fetchChartsData();
   }, []);
 
   const handleSearch = async () => {
@@ -325,37 +408,64 @@ function DashboardPage() {
             description="Student risk levels"
           >
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <defs>
-                    <linearGradient id="riskGrad1" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#DA11CB" />
-                      <stop offset="100%" stopColor="#6665D8" />
-                    </linearGradient>
-                    <linearGradient id="riskGrad2" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#6665D8" />
-                      <stop offset="100%" stopColor="#003CFF" />
-                    </linearGradient>
-                    <linearGradient id="riskGrad3" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#003CFF" />
-                      <stop offset="100%" stopColor="#0090FF" />
-                    </linearGradient>
-                  </defs>
-                  <Pie
-                    data={riskDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={90}
-                    dataKey="value"
-                  >
-                    <Cell fill="url(#riskGrad1)" />
-                    <Cell fill="url(#riskGrad2)" />
-                    <Cell fill="url(#riskGrad3)" />
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {loadingCharts ? (
+                <ChartEmptyState message="Loading..." />
+              ) : riskDistribution.length === 0 ? (
+                <ChartEmptyState />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <defs>
+                      {/* Growth & Health -> Low risk */}
+                      <linearGradient
+                        id="riskGrad1"
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="1"
+                      >
+                        <stop offset="0%" stopColor="#56AB2F" />
+                        <stop offset="100%" stopColor="#A8E063" />
+                      </linearGradient>
+                      {/* Alert/Warning -> Medium risk */}
+                      <linearGradient
+                        id="riskGrad2"
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="1"
+                      >
+                        <stop offset="0%" stopColor="#ffb703" />
+                        <stop offset="100%" stopColor="#fb8500" />
+                      </linearGradient>
+                      {/* Action-Oriented -> High risk */}
+                      <linearGradient
+                        id="riskGrad3"
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="1"
+                      >
+                        <stop offset="0%" stopColor="#FF5F6D" />
+                        <stop offset="100%" stopColor="#FFC371" />
+                      </linearGradient>
+                    </defs>
+                    <Pie
+                      data={riskDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={90}
+                      dataKey="value"
+                    >
+                      <Cell fill="url(#riskGrad1)" />
+                      <Cell fill="url(#riskGrad2)" />
+                      <Cell fill="url(#riskGrad3)" />
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </DashboardCard>
         </div>
@@ -367,38 +477,55 @@ function DashboardPage() {
             description="Top students by attendance"
           >
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceDistribution}>
-                  <defs>
-                    {/* Vibrant SaaS gradient for attendance bars */}
-                    <linearGradient
-                      id="attendanceGrad"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="0%" stopColor="#36d1dc" />
-                      <stop offset="100%" stopColor="#5b86e5" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" stroke="#64748b" />
-                  <YAxis domain={[50, 100]} stroke="#64748b" />
-                  <Tooltip />
-                  <Bar
-                    dataKey="attendance"
-                    fill="url(#attendanceGrad)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              {loadingCharts ? (
+                <ChartEmptyState message="Loading..." />
+              ) : attendanceDistribution.length === 0 ? (
+                <ChartEmptyState />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={attendanceDistribution}
+                    margin={{ top: 5, right: 5, left: -10, bottom: 25 }}
+                  >
+                    <defs>
+                      {/* Vibrant SaaS gradient for attendance bars */}
+                      <linearGradient
+                        id="attendanceGrad"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop offset="0%" stopColor="#36d1dc" />
+                        <stop offset="100%" stopColor="#5b86e5" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#64748b"
+                      interval={0}
+                      angle={-25}
+                      textAnchor="end"
+                      tick={{ fontSize: 12 }}
+                      height={50}
+                    />
+                    <YAxis domain={[0, 100]} stroke="#64748b" />
+                    <Tooltip />
+                    <Bar
+                      dataKey="attendance"
+                      fill="url(#attendanceGrad)"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </DashboardCard>
         </div>
       </div>
 
-      {/* Student Summary + Attendance + Intervention */}
+      {/* Student Summary + Intervention */}
       <div className="grid gap-6 xl:grid-cols-12">
         <div className="space-y-6 xl:col-span-7">
           <DashboardCard
@@ -550,32 +677,49 @@ function DashboardPage() {
             description="Highest academic averages"
           >
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topPerformers}>
-                  <defs>
-                    {/* Futuristic/Neon gradient for top performers bars */}
-                    <linearGradient
-                      id="topPerformersGrad"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="0%" stopColor="#4568DC" />
-                      <stop offset="100%" stopColor="#B06AB3" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" stroke="#64748b" />
-                  <YAxis domain={[80, 100]} stroke="#64748b" />
-                  <Tooltip />
-                  <Bar
-                    dataKey="average"
-                    fill="url(#topPerformersGrad)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              {loadingCharts ? (
+                <ChartEmptyState message="Loading..." />
+              ) : topPerformers.length === 0 ? (
+                <ChartEmptyState />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={topPerformers}
+                    margin={{ top: 5, right: 5, left: -10, bottom: 25 }}
+                  >
+                    <defs>
+                      {/* Futuristic/Neon gradient for top performers bars */}
+                      <linearGradient
+                        id="topPerformersGrad"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop offset="0%" stopColor="#4568DC" />
+                        <stop offset="100%" stopColor="#B06AB3" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#64748b"
+                      interval={0}
+                      angle={-25}
+                      textAnchor="end"
+                      tick={{ fontSize: 12 }}
+                      height={50}
+                    />
+                    <YAxis domain={[0, 100]} stroke="#64748b" />
+                    <Tooltip />
+                    <Bar
+                      dataKey="average"
+                      fill="url(#topPerformersGrad)"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </DashboardCard>
         </div>
