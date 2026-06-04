@@ -5,7 +5,6 @@ import {
   applyClusterFilters,
   resetClusterFilters,
   getClusterStudent,
-  generateClusterReport,
 } from "../../services/clusteringService";
 import {
   FILTER_CONSTANTS,
@@ -15,6 +14,7 @@ import {
 import ClusterDetailsPanel from "./components/ClusterDetailsPanel";
 import ClusterFilters from "./components/ClusterFilters";
 import ClusterPageHeader from "./components/ClusterPageHeader";
+import ClusterReportModal from "./components/ClusterReportModal";
 import ClusterScatterPanel from "./components/ClusterScatterPanel";
 import ClusterSummaryList from "./components/ClusterSummaryList";
 import ClusterTablePanel from "./components/ClusterTablePanel";
@@ -112,8 +112,8 @@ function StudentClusteringPage() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isLoadingStudent, setIsLoadingStudent] = useState(false);
 
-  // Report generation state.
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  // Report modal visibility.
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   // Build the filter payload, omitting "all" grade level so it is not sent.
   const buildFilterPayload = useCallback((filters) => {
@@ -234,26 +234,12 @@ function StudentClusteringPage() {
     setIsLoading(false);
   };
 
-  const handleGenerateReport = async () => {
-    setIsGeneratingReport(true);
-    const res = await generateClusterReport(buildFilterPayload(appliedFilters));
-    setIsGeneratingReport(false);
-    if (res.success && res.data?.reportUrl) {
-      window.open(res.data.reportUrl, "_blank", "noopener,noreferrer");
-    }
-  };
-
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <ClusterPageHeader
         title="Student Clustering"
         subtitle="Group students by behavior, attendance, and risk patterns to identify intervention priorities."
-        action={
-          <GenerateReportButton
-            onClick={handleGenerateReport}
-            disabled={isGeneratingReport}
-          />
-        }
+        action={<GenerateReportButton onClick={() => setIsReportOpen(true)} />}
       />
 
       <ClusterFilters
@@ -339,6 +325,12 @@ function StudentClusteringPage() {
           isLoading={isLoadingStudent}
         />
       </section>
+
+      <ClusterReportModal
+        open={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        initialFilters={appliedFilters}
+      />
     </main>
   );
 }

@@ -13,7 +13,6 @@ export const FILTER_CONSTANTS = {
     { label: "2024-2025", value: "2024-2025" },
   ],
   GRADE_LEVELS: [
-    { label: "All grades", value: "all" },
     { label: "Grade 10", value: "10" },
     { label: "Grade 11", value: "11" },
     { label: "Grade 12", value: "12" },
@@ -24,5 +23,5 @@ export const FILTER_CONSTANTS = {
 export const DEFAULT_FILTERS = {
   dateRange: "last 90 days",
   schoolYear: "2025-2026",
-  gradeLevel: "all",
+  gradeLevel: "10",
 };
