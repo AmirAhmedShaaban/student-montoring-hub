@@ -91,7 +91,7 @@ export async function login(email, password) {
         email: email.trim().toLowerCase(),
         role,
         token,
-        profilePicture: serverData.profilePicture || null, // ← مهم
+        profilePicture: serverData.profilePicture || null,
         signedInAt: new Date().toISOString(),
       };
 
@@ -165,13 +165,19 @@ export async function register(userData) {
 
 export async function logout() {
   if (typeof window === "undefined") return;
+
   try {
+    // Attempt to notify the backend. This may fail if the token is already
+    // invalid (e.g. the session was replaced by a login from another device).
     await API.post("/Auth/logout");
   } catch (error) {
+    // The logout call failing is non-critical; we clear the session anyway.
     console.log(error);
+  } finally {
+    // Always clear local auth data, regardless of the API result.
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    window.localStorage.removeItem(TOKEN_KEY);
   }
-  window.localStorage.removeItem(AUTH_STORAGE_KEY);
-  window.localStorage.removeItem(TOKEN_KEY);
 }
 
 export function updateProfile(profileUpdates) {

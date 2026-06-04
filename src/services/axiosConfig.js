@@ -1,5 +1,8 @@
 import axios from "axios";
 
+const TOKEN_KEY = "student-behavior-dashboard-token";
+const AUTH_STORAGE_KEY = "student-behavior-dashboard-auth";
+
 const API = axios.create({
   baseURL: "http://studentmonitor.runasp.net/api",
   headers: {
@@ -7,8 +10,9 @@ const API = axios.create({
   },
 });
 
+// Attach the bearer token to every request when available.
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("student-behavior-dashboard-token");
+  const token = localStorage.getItem(TOKEN_KEY);
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -16,5 +20,37 @@ API.interceptors.request.use((config) => {
 
   return config;
 });
+
+// Endpoints where a 401 means "invalid credentials", not an expired session.
+// We must NOT redirect for these, so the form can show the error normally.
+const AUTH_EXCLUDED_PATHS = ["/Auth/login", "/Auth/register"];
+
+// Handle expired/invalid sessions globally: clear local auth data and force
+// a redirect to the login page. Guards prevent redirect loops.
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || "";
+
+    const isAuthRequest = AUTH_EXCLUDED_PATHS.some((path) =>
+      requestUrl.includes(path),
+    );
+    const isAlreadyOnLogin =
+      typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/login");
+
+    if (status === 401 && !isAuthRequest && !isAlreadyOnLogin) {
+      // The current session is no longer valid. Clear it and start over.
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+
+      // Hard redirect to fully reset any stale in-memory React state.
+      window.location.href = "/login";
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export default API;
