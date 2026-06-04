@@ -179,3 +179,51 @@ export async function deleteBehaviorRule(ruleId) {
     };
   }
 }
+
+/**
+ * Detect student behaviors from an uploaded classroom image (AI analysis).
+ * POST /Behavior/detect (multipart/form-data, field name: "CameraImage")
+ *
+ * NOTE: This endpoint returns { success, message, data: [...] }
+ * (uses "success", not the usual "succeeded" envelope).
+ *
+ * The Content-Type header is set to undefined so the browser attaches the
+ * correct multipart boundary automatically.
+ *
+ * @param {File} imageFile - The classroom image to analyze.
+ * @returns {Promise<{success: boolean, data: Array, message: string}>}
+ */
+export async function detectBehavior(imageFile) {
+  try {
+    const formData = new FormData();
+    formData.append("CameraImage", imageFile);
+
+    const response = await API.post("/Behavior/detect", formData, {
+      headers: { "Content-Type": undefined },
+    });
+
+    if (response.data && response.data.success) {
+      return {
+        success: true,
+        data: response.data.data || [],
+        message: response.data.message || "Analysis completed.",
+      };
+    }
+
+    return {
+      success: false,
+      data: [],
+      message: response.data?.message || "Failed to analyze the image.",
+    };
+  } catch (error) {
+    console.error("Error detecting behavior:", error);
+    return {
+      success: false,
+      data: [],
+      message:
+        error.response?.data?.message ||
+        error.response?.data?.title ||
+        "Server error during behavior detection.",
+    };
+  }
+}
