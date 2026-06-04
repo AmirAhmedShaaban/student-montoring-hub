@@ -365,3 +365,47 @@ export async function updateStudentNote(noteId, noteData) {
     };
   }
 }
+
+/**
+ * Adds a new student to the system.
+ * POST /Students/AddStudent (multipart/form-data, includes ImageFile)
+ *
+ * The Content-Type header is set to undefined so the browser attaches the
+ * correct multipart boundary automatically.
+ *
+ * @param {FormData} formData - Prebuilt FormData with the student fields + ImageFile.
+ * @returns {Promise<{success: boolean, message: string, data: Object|null}>}
+ */
+export async function addStudent(formData) {
+  try {
+    const response = await API.post("/Students/AddStudent", formData, {
+      headers: { "Content-Type": undefined },
+    });
+
+    if (response.data && response.data.succeeded) {
+      // The endpoint returns the created student inside a data array.
+      const created = Array.isArray(response.data.data)
+        ? response.data.data[0]
+        : response.data.data;
+
+      return {
+        success: true,
+        message: response.data.message || "Student added successfully.",
+        data: created || null,
+      };
+    }
+
+    return {
+      success: false,
+      message: response.data?.message || "Failed to add student.",
+      data: null,
+    };
+  } catch (error) {
+    console.error("Error adding student:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Server error adding student.",
+      data: null,
+    };
+  }
+}
