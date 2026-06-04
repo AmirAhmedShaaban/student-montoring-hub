@@ -1,6 +1,16 @@
-import { useMemo, useState } from "react";
-import { useDashboardMockData } from "../../mocks/dashboard.mock";
-import { clusteringMockData } from "../../mocks/clustering.mock";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import {
+  getClusterSummaries,
+  applyClusterFilters,
+  resetClusterFilters,
+  getClusterStudent,
+  generateClusterReport,
+} from "../../services/clusteringService";
+import {
+  FILTER_CONSTANTS,
+  DEFAULT_FILTERS,
+} from "../../services/clustering.constants";
 
 import ClusterDetailsPanel from "./components/ClusterDetailsPanel";
 import ClusterFilters from "./components/ClusterFilters";
@@ -11,100 +21,226 @@ import ClusterTablePanel from "./components/ClusterTablePanel";
 import ClusterViewTabs from "./components/ClusterViewTabs";
 import GenerateReportButton from "./components/GenerateReportButton";
 
-const initialFilters = {
-  dateRange: "last-90-days",
-  schoolYear: "2025-2026",
-  gradeLevel: "all",
+// Filter options passed to the dropdowns (aligned with backend values).
+const filterOptions = {
+  dateRanges: FILTER_CONSTANTS.DATE_RANGES,
+  schoolYears: FILTER_CONSTANTS.SCHOOL_YEARS,
+  gradeLevels: FILTER_CONSTANTS.GRADE_LEVELS,
 };
 
-function average(values, key) {
-  if (values.length === 0) {
-    return null;
-  }
-
-  return (
-    values.reduce((sum, item) => sum + Number(item[key] ?? 0), 0) /
-    values.length
-  );
+// Clean up the backend's duplicated grade level (e.g. "Grade Grade 10").
+function cleanGradeLevel(value) {
+  if (!value) return "";
+  return value.replace(/Grade\s+Grade/i, "Grade").trim();
 }
 
+// Normalize a cluster object coming from the API to the shape the UI expects.
+function normalizeCluster(apiCluster) {
+  return {
+    id: apiCluster.groupID,
+    name: apiCluster.clusterName,
+    label: apiCluster.clusterLabel,
+    mainIssue: apiCluster.mainIssue,
+    studentCount: apiCluster.studentCount,
+    avgAttendance:
+      typeof apiCluster.avgAttendance === "number"
+        ? apiCluster.avgAttendance
+        : null,
+    avgGrade:
+      typeof apiCluster.avgGrade === "number" ? apiCluster.avgGrade : null,
+    // The cluster colorCode contains Tailwind classes (badge styling).
+    badgeClass: apiCluster.colorCode || "bg-slate-100 text-slate-700",
+  };
+}
+
+// Normalize a visualization student to the shape the UI expects.
+function normalizeStudent(apiStudent) {
+  const attendanceRate = Number(apiStudent.attendanceRate) || 0;
+  return {
+    id: apiStudent.studentID,
+    studentId: apiStudent.studentCode || `#${apiStudent.studentID}`,
+    name: apiStudent.studentName,
+    clusterId: apiStudent.groupID,
+    gradeLevel: cleanGradeLevel(apiStudent.gradeLevel),
+    gradeAverage: Number(apiStudent.averageGrade) || 0,
+    attendanceRate,
+    // Backend does not provide absenteeism, derive it from attendance.
+    absenteeismRate: Math.max(0, 100 - attendanceRate),
+    riskLabel: apiStudent.riskLabel,
+    // Dynamic point color (hex) for the scatter plot.
+    colorCode: apiStudent.colorCode || "#64748b",
+  };
+}
+
+// Normalize a single student's detailed clustering record.
+function normalizeStudentDetails(apiStudent) {
+  return {
+    id: apiStudent.studentID,
+    studentId: apiStudent.studentCode || `#${apiStudent.studentID}`,
+    name: apiStudent.studentName,
+    gradeLevel: cleanGradeLevel(apiStudent.gradeLevel),
+    gradeAverage: Number(apiStudent.currentGrade) || 0,
+    attendanceRate: Number(apiStudent.attendanceRate) || 0,
+    clusterId: apiStudent.clusterGroupID,
+    clusterLabel: apiStudent.clusterLabel,
+    recentIncidents: apiStudent.recentIncidents || [],
+    // note / suggestedAction are not provided by the API yet.
+    recentNote: apiStudent.recentNote || null,
+    suggestedAction: apiStudent.suggestedAction || null,
+  };
+}
+
+const viewTabs = [
+  { id: "scatter", label: "Scatter view" },
+  { id: "table", label: "Table view" },
+];
+
 function StudentClusteringPage() {
-  const dashboardData = useDashboardMockData();
-  const [draftFilters, setDraftFilters] = useState(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
+  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
   const [activeView, setActiveView] = useState("scatter");
-  const [selectedStudentId, setSelectedStudentId] = useState(
-    clusteringMockData.defaultSelectedStudentId,
-  );
 
-  const visibleStudents = useMemo(() => {
-    return clusteringMockData.students.filter((student) => {
-      const matchesDateRange = student.dateRangeKeys.includes(
-        appliedFilters.dateRange,
+  // Clustering run data coming from the backend.
+  const [runId, setRunId] = useState(null);
+  const [clusters, setClusters] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  // Selected student details (fetched on select).
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isLoadingStudent, setIsLoadingStudent] = useState(false);
+
+  // Report generation state.
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  // Build the filter payload, omitting "all" grade level so it is not sent.
+  const buildFilterPayload = useCallback((filters) => {
+    return {
+      dateRange: filters.dateRange,
+      schoolYear: filters.schoolYear,
+      gradeLevel: filters.gradeLevel === "all" ? "" : filters.gradeLevel,
+    };
+  }, []);
+
+  // Apply a clustering result (clusters + visualization) to local state.
+  const applyResult = useCallback((data) => {
+    if (!data) return;
+    setRunId(data.runID ?? null);
+    setClusters((data.clusters || []).map(normalizeCluster));
+    setStudents((data.visualizationData || []).map(normalizeStudent));
+  }, []);
+
+  // Initial load: fetch summaries with the default filters.
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+      const res = await getClusterSummaries(
+        buildFilterPayload(DEFAULT_FILTERS),
       );
-      const matchesSchoolYear =
-        student.schoolYear === appliedFilters.schoolYear;
-      const matchesGradeLevel =
-        appliedFilters.gradeLevel === "all" ||
-        student.gradeLevel === appliedFilters.gradeLevel;
+      if (!active) return;
+      if (res.success) {
+        applyResult(res.data);
+      } else {
+        setLoadError(res.message || "Failed to load clustering data.");
+      }
+      setIsLoading(false);
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [applyResult, buildFilterPayload]);
 
-      return matchesDateRange && matchesSchoolYear && matchesGradeLevel;
+  // Derive a color (hex) for each cluster from its students, so the scatter
+  // legend dots match the point colors.
+  const clustersWithColor = useMemo(() => {
+    return clusters.map((cluster) => {
+      const member = students.find((s) => s.clusterId === cluster.id);
+      return { ...cluster, dotColor: member?.colorCode || "#64748b" };
     });
-  }, [appliedFilters]);
+  }, [clusters, students]);
 
+  // Keep a valid active selection within the current students.
   const activeStudentId = useMemo(() => {
-    if (visibleStudents.length === 0) {
-      return null;
+    if (students.length === 0) return null;
+    const exists = students.some((s) => s.id === selectedStudentId);
+    return exists ? selectedStudentId : students[0].id;
+  }, [selectedStudentId, students]);
+
+  // Fetch the detailed record whenever the active student or run changes.
+  useEffect(() => {
+    if (!runId || !activeStudentId) {
+      setSelectedStudent(null);
+      return;
     }
 
-    const selectedVisibleStudent = visibleStudents.find(
-      (student) => student.id === selectedStudentId,
-    );
-
-    return selectedVisibleStudent?.id ?? visibleStudents[0].id;
-  }, [selectedStudentId, visibleStudents]);
-
-  const selectedStudent = useMemo(() => {
-    return (
-      visibleStudents.find((student) => student.id === activeStudentId) ?? null
-    );
-  }, [activeStudentId, visibleStudents]);
-
-  const clusterSummaries = useMemo(() => {
-    return clusteringMockData.clusters.map((cluster) => {
-      const clusterStudents = visibleStudents.filter(
-        (student) => student.clusterId === cluster.id,
-      );
-
-      return {
-        ...cluster,
-        studentCount: clusterStudents.length,
-        avgAttendance: average(clusterStudents, "attendanceRate"),
-        avgGrade: average(clusterStudents, "gradeAverage"),
-      };
-    });
-  }, [visibleStudents]);
-
-  const viewTabs = [
-    { id: "scatter", label: "Scatter view" },
-    { id: "table", label: "Table view" },
-  ];
+    let active = true;
+    const loadStudent = async () => {
+      setIsLoadingStudent(true);
+      const res = await getClusterStudent(runId, activeStudentId);
+      if (!active) return;
+      if (res.success) {
+        setSelectedStudent(normalizeStudentDetails(res.data));
+      } else {
+        // Fall back to the basic visualization data on failure.
+        const fallback = students.find((s) => s.id === activeStudentId) || null;
+        setSelectedStudent(fallback);
+      }
+      setIsLoadingStudent(false);
+    };
+    loadStudent();
+    return () => {
+      active = false;
+    };
+  }, [runId, activeStudentId, students]);
 
   const handleFilterChange = (field, value) => {
-    setDraftFilters((currentFilters) => ({
-      ...currentFilters,
-      [field]: value,
-    }));
+    setDraftFilters((current) => ({ ...current, [field]: value }));
   };
 
-  const handleApplyFilters = (event) => {
+  const handleApplyFilters = async (event) => {
     event.preventDefault();
-    setAppliedFilters(draftFilters);
+    setIsLoading(true);
+    setLoadError(null);
+    setSelectedStudentId(null);
+    const res = await applyClusterFilters(buildFilterPayload(draftFilters));
+    if (res.success) {
+      setAppliedFilters(draftFilters);
+      applyResult(res.data);
+    } else {
+      setLoadError(res.message || "Failed to apply filters.");
+    }
+    setIsLoading(false);
   };
 
-  const handleResetFilters = () => {
-    setDraftFilters(initialFilters);
-    setAppliedFilters(initialFilters);
+  const handleResetFilters = async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    setSelectedStudentId(null);
+    setDraftFilters(DEFAULT_FILTERS);
+    setAppliedFilters(DEFAULT_FILTERS);
+
+    await resetClusterFilters();
+    const res = await getClusterSummaries(buildFilterPayload(DEFAULT_FILTERS));
+    if (res.success) {
+      applyResult(res.data);
+    } else {
+      setLoadError(res.message || "Failed to reset filters.");
+    }
+    setIsLoading(false);
+  };
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    const res = await generateClusterReport(buildFilterPayload(appliedFilters));
+    setIsGeneratingReport(false);
+    if (res.success && res.data?.reportUrl) {
+      window.open(res.data.reportUrl, "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
@@ -112,12 +248,17 @@ function StudentClusteringPage() {
       <ClusterPageHeader
         title="Student Clustering"
         subtitle="Group students by behavior, attendance, and risk patterns to identify intervention priorities."
-        action={<GenerateReportButton />}
+        action={
+          <GenerateReportButton
+            onClick={handleGenerateReport}
+            disabled={isGeneratingReport}
+          />
+        }
       />
 
       <ClusterFilters
         value={draftFilters}
-        filterOptions={clusteringMockData.filters}
+        filterOptions={filterOptions}
         onChange={handleFilterChange}
         onApply={handleApplyFilters}
         onReset={handleResetFilters}
@@ -133,13 +274,19 @@ function StudentClusteringPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-          Recent review: {dashboardData.latestAnalysisResult.classification} in{" "}
-          {dashboardData.latestAnalysisResult.cluster} with{" "}
-          {dashboardData.latestAnalysisResult.riskLevel.toLowerCase()} risk.
-        </div>
+        {loadError ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {loadError}
+          </div>
+        ) : null}
 
-        <ClusterSummaryList clusters={clusterSummaries} />
+        {isLoading ? (
+          <div className="flex h-32 items-center justify-center rounded-3xl border border-slate-200 bg-white">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
+          </div>
+        ) : (
+          <ClusterSummaryList clusters={clustersWithColor} />
+        )}
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.85fr)]">
@@ -151,7 +298,8 @@ function StudentClusteringPage() {
                   Cluster visualization
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Compare behavior and attendance patterns, then select a student.
+                  Compare behavior and attendance patterns, then select a
+                  student.
                 </p>
               </div>
 
@@ -163,18 +311,22 @@ function StudentClusteringPage() {
             </div>
 
             <div className="pt-6">
-              {activeView === "scatter" ? (
+              {isLoading ? (
+                <div className="flex h-72 items-center justify-center">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600" />
+                </div>
+              ) : activeView === "scatter" ? (
                 <ClusterScatterPanel
-                  students={visibleStudents}
-                  clusters={clusteringMockData.clusters}
+                  students={students}
+                  clusters={clustersWithColor}
                   selectedStudentId={activeStudentId}
                   onSelectStudent={setSelectedStudentId}
                 />
               ) : (
                 <ClusterTablePanel
-                  students={visibleStudents}
+                  students={students}
                   selectedStudentId={activeStudentId}
-                  clusters={clusteringMockData.clusters}
+                  clusters={clustersWithColor}
                   onSelectStudent={setSelectedStudentId}
                 />
               )}
@@ -182,7 +334,10 @@ function StudentClusteringPage() {
           </div>
         </div>
 
-        <ClusterDetailsPanel student={selectedStudent} />
+        <ClusterDetailsPanel
+          student={selectedStudent}
+          isLoading={isLoadingStudent}
+        />
       </section>
     </main>
   );
