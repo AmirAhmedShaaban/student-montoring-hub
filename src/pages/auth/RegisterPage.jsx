@@ -81,12 +81,12 @@ function RegisterPage() {
       <div className="mx-auto grid gap-4 min-h-[calc(100vh-3rem)] max-w-5xl items-center lg:grid-cols-[0.95fr_1.05fr]">
         <section className="hidden min-h-160 flex-col justify-between rounded-4xl border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#eff6ff_100%)] p-10 shadow-[0_20px_70px_rgba(15,23,42,0.08)] lg:flex">
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
-                SB
-              </span>
-              Student Behavior Dashboard
-            </div>
+            {/* Logo (uses Logo-prev.png because the background is light) */}
+            <img
+              src="/Logo-prev.png"
+              alt="Student Behavior Dashboard logo"
+              className="h-18 w-auto object-contain"
+            />
 
             <div className="max-w-lg space-y-4">
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">
