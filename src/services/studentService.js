@@ -409,3 +409,61 @@ export async function addStudent(formData) {
     };
   }
 }
+
+/**
+ * Marks attendance via AI face recognition from a camera image.
+ * POST /Attendance/mark (multipart/form-data)
+ * Fields: CameraImage (binary), ScheduledTime (date-time), VideoSessionId (int)
+ *
+ * NOTE: This endpoint returns { success, message, data: {...} }
+ * (uses "success", not the usual "succeeded" envelope).
+ *
+ * The Content-Type header is set to undefined so the browser attaches the
+ * correct multipart boundary automatically.
+ *
+ * @param {Object} payload
+ * @param {File} payload.cameraImage - The captured/uploaded image.
+ * @param {string} payload.scheduledTime - ISO date-time string.
+ * @param {number|string} payload.videoSessionId - The session identifier.
+ * @returns {Promise<{success: boolean, message: string, data: Object|null}>}
+ */
+export async function markAttendance({
+  cameraImage,
+  scheduledTime,
+  videoSessionId,
+}) {
+  try {
+    const formData = new FormData();
+    formData.append("CameraImage", cameraImage);
+    formData.append("ScheduledTime", scheduledTime);
+    formData.append("VideoSessionId", videoSessionId);
+
+    const response = await API.post("/Attendance/mark", formData, {
+      headers: { "Content-Type": undefined },
+    });
+
+    if (response.data && response.data.success) {
+      return {
+        success: true,
+        message: response.data.message || "Attendance recorded.",
+        data: response.data.data || null,
+      };
+    }
+
+    return {
+      success: false,
+      message: response.data?.message || "Failed to mark attendance.",
+      data: null,
+    };
+  } catch (error) {
+    console.error("Error marking attendance:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        error.response?.data?.title ||
+        "Server error marking attendance.",
+      data: null,
+    };
+  }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useDashboardMockData } from "../../mocks/dashboard.mock";
 import {
@@ -11,6 +11,7 @@ import {
   getAttendanceSummary,
   getGradesAverage,
   getBehaviorSummary,
+  markAttendance,
 } from "../../services/studentService";
 import { getStudentAcademic } from "../../services/dashboardService";
 
@@ -32,6 +33,16 @@ import {
   STUDENT_PROFILE_TABS,
 } from "./studentProfile.utils";
 
+// Style for the attendance status badge based on its value.
+function attendanceStatusClass(status) {
+  const value = String(status || "").toLowerCase();
+  if (value === "present")
+    return "bg-emerald-50 text-emerald-700 ring-emerald-100";
+  if (value === "late") return "bg-amber-50 text-amber-700 ring-amber-100";
+  if (value === "absent") return "bg-rose-50 text-rose-700 ring-rose-100";
+  return "bg-slate-100 text-slate-700 ring-slate-200";
+}
+
 function StudentProfileWorkspace({
   profile,
   latestAnalysis,
@@ -43,6 +54,7 @@ function StudentProfileWorkspace({
   gradeAverage,
   behaviorRecords,
   behaviorSummary,
+  onAttendanceMarked,
 }) {
   const [activeTab, setActiveTab] = useState(STUDENT_PROFILE_TABS[0].id);
   const [notes, setNotes] = useState(profile.notes || []);
@@ -53,6 +65,17 @@ function StudentProfileWorkspace({
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [noteError, setNoteError] = useState("");
   const [showMarkAttendanceForm, setShowMarkAttendanceForm] = useState(false);
+
+  // Mark Attendance form state.
+  const [attendanceForm, setAttendanceForm] = useState({
+    cameraImage: null,
+    scheduledTime: "",
+    videoSessionId: "",
+  });
+  const [isMarkingAttendance, setIsMarkingAttendance] = useState(false);
+  const [attendanceError, setAttendanceError] = useState("");
+  const [attendanceResult, setAttendanceResult] = useState(null);
+  const attendanceFileRef = useRef(null);
 
   const handleAddNote = async (event) => {
     event.preventDefault();
@@ -91,6 +114,52 @@ function StudentProfileWorkspace({
       setNoteError("Something went wrong while saving the note.");
     } finally {
       setIsSubmittingNote(false);
+    }
+  };
+
+  // Handle the Mark Attendance submission.
+  const handleMarkAttendance = async (event) => {
+    event.preventDefault();
+    setAttendanceError("");
+    setAttendanceResult(null);
+
+    if (!attendanceForm.cameraImage) {
+      setAttendanceError("Please choose a camera image.");
+      return;
+    }
+    if (!attendanceForm.scheduledTime) {
+      setAttendanceError("Please select the scheduled time.");
+      return;
+    }
+    if (!attendanceForm.videoSessionId) {
+      setAttendanceError("Please enter the video session ID.");
+      return;
+    }
+
+    try {
+      setIsMarkingAttendance(true);
+      const result = await markAttendance({
+        cameraImage: attendanceForm.cameraImage,
+        scheduledTime: new Date(attendanceForm.scheduledTime).toISOString(),
+        videoSessionId: attendanceForm.videoSessionId,
+      });
+
+      if (result.success) {
+        setAttendanceResult(result.data);
+        setAttendanceForm({
+          cameraImage: null,
+          scheduledTime: "",
+          videoSessionId: "",
+        });
+        if (attendanceFileRef.current) attendanceFileRef.current.value = "";
+        if (onAttendanceMarked) onAttendanceMarked();
+      } else {
+        setAttendanceError(result.message || "Failed to mark attendance.");
+      }
+    } catch (err) {
+      setAttendanceError("Something went wrong while marking attendance.");
+    } finally {
+      setIsMarkingAttendance(false);
     }
   };
 
@@ -240,17 +309,35 @@ function StudentProfileWorkspace({
               <h3 className="text-2xl font-semibold text-slate-950 mb-6">
                 Mark Attendance
               </h3>
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleMarkAttendance}>
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-2">
                     Camera Image
                   </label>
-                  <label className="flex items-center justify-center w-full h-14 border border-dashed border-slate-300 rounded-2xl cursor-pointer hover:bg-slate-50 transition">
+                  <button
+                    type="button"
+                    onClick={() => attendanceFileRef.current?.click()}
+                    className="flex items-center justify-center w-full h-14 border border-dashed border-slate-300 rounded-2xl cursor-pointer hover:bg-slate-50 transition"
+                  >
                     <span className="text-sm font-medium text-slate-600">
-                      Choose Image
+                      {attendanceForm.cameraImage
+                        ? attendanceForm.cameraImage.name
+                        : "Choose Image"}
                     </span>
-                    <input type="file" accept="image/*" className="hidden" />
-                  </label>
+                  </button>
+                  <input
+                    ref={attendanceFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setAttendanceForm((prev) => ({
+                        ...prev,
+                        cameraImage: file,
+                      }));
+                    }}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-2">
@@ -259,6 +346,13 @@ function StudentProfileWorkspace({
                   <input
                     type="datetime-local"
                     className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                    value={attendanceForm.scheduledTime}
+                    onChange={(e) =>
+                      setAttendanceForm((prev) => ({
+                        ...prev,
+                        scheduledTime: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div>
@@ -268,15 +362,84 @@ function StudentProfileWorkspace({
                   <input
                     type="number"
                     className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
+                    value={attendanceForm.videoSessionId}
+                    onChange={(e) =>
+                      setAttendanceForm((prev) => ({
+                        ...prev,
+                        videoSessionId: e.target.value,
+                      }))
+                    }
                   />
                 </div>
+
+                {attendanceError ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {attendanceError}
+                  </div>
+                ) : null}
+
                 <button
-                  type="button"
-                  className="w-full rounded-2xl bg-slate-950 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                  type="submit"
+                  disabled={isMarkingAttendance}
+                  className="w-full rounded-2xl bg-slate-950 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Submit Attendance
+                  {isMarkingAttendance ? "Submitting..." : "Submit Attendance"}
                 </button>
               </form>
+
+              {/* Result Card */}
+              {attendanceResult ? (
+                <div className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-emerald-700">
+                        Attendance recorded
+                      </p>
+                      <h4 className="mt-1 text-lg font-semibold text-slate-950">
+                        {attendanceResult.studentName ||
+                          `Student #${attendanceResult.studentId}`}
+                      </h4>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${attendanceStatusClass(
+                        attendanceResult.status,
+                      )}`}
+                    >
+                      {attendanceResult.status}
+                    </span>
+                  </div>
+
+                  <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-white p-3">
+                      <dt className="text-xs font-medium text-slate-500">
+                        Late minutes
+                      </dt>
+                      <dd className="mt-1 text-lg font-semibold text-slate-950">
+                        {attendanceResult.lateMinutes ?? 0}
+                      </dd>
+                    </div>
+                    <div className="rounded-2xl bg-white p-3">
+                      <dt className="text-xs font-medium text-slate-500">
+                        Confidence
+                      </dt>
+                      <dd className="mt-1 text-lg font-semibold text-slate-950">
+                        {Math.round(
+                          (Number(attendanceResult.confidence) || 0) * 100,
+                        )}
+                        %
+                      </dd>
+                    </div>
+                    <div className="rounded-2xl bg-white p-3">
+                      <dt className="text-xs font-medium text-slate-500">
+                        Source
+                      </dt>
+                      <dd className="mt-1 text-sm font-semibold text-slate-950">
+                        {attendanceResult.source || "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -350,12 +513,21 @@ function StudentProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const targetId = id ? Number(id) : 1;
+
+  // Refresh just the attendance records (used after marking attendance).
+  const refreshAttendance = async () => {
+    const attendanceRes = await getStudentAttendance(targetId);
+    if (attendanceRes.success) {
+      setAttendanceRecords(attendanceRes.data);
+    }
+  };
+
   useEffect(() => {
     async function fetchFullProfile() {
       try {
         setLoading(true);
         setError("");
-        const targetId = id ? Number(id) : 1;
 
         const [
           studentRes,
@@ -468,7 +640,7 @@ function StudentProfilePage() {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-5 w-full rounded-2xl bg-slate-950 py-2.5 text-sm font-semibold text-white shadow hover:bg-slate-909 transition"
+            className="mt-5 w-full rounded-2xl bg-slate-950 py-2.5 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
           >
             Retry Connection
           </button>
@@ -490,6 +662,7 @@ function StudentProfilePage() {
       gradeAverage={gradeAverage}
       behaviorRecords={behaviorRecords}
       behaviorSummary={behaviorSummary}
+      onAttendanceMarked={refreshAttendance}
     />
   );
 }
