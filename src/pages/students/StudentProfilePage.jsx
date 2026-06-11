@@ -218,7 +218,7 @@ function StudentProfileWorkspace({
           </div>
 
           <div className="space-y-6">
-            <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+            {/* <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
               <h2 className="text-lg font-semibold text-slate-950">
                 Latest AI analysis
               </h2>
@@ -257,7 +257,7 @@ function StudentProfileWorkspace({
                   </dd>
                 </div>
               </dl>
-            </section>
+            </section> */}
 
             <StudentAcademicCard academicData={academicData} />
           </div>

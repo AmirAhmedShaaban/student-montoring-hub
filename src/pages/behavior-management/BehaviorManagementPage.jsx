@@ -432,7 +432,7 @@ function BehaviorManagementPage() {
       </section>
 
       {/* ---------- AI Analysis (still mock) ---------- */}
-      <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+      {/* <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-950">
@@ -480,7 +480,7 @@ function BehaviorManagementPage() {
           Suggested intervention:{" "}
           {dashboardData.latestAnalysisResult.suggestedIntervention}
         </div>
-      </section>
+      </section> */}
 
       {/* ---------- Rules list + editor ---------- */}
       <section className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
