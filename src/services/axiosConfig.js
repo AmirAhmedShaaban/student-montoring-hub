@@ -4,7 +4,7 @@ const TOKEN_KEY = "student-behavior-dashboard-token";
 const AUTH_STORAGE_KEY = "student-behavior-dashboard-auth";
 
 const API = axios.create({
-  baseURL: "http://studentmonitor.runasp.net/api",
+  baseURL: "/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -36,16 +36,25 @@ API.interceptors.response.use(
     const isAuthRequest = AUTH_EXCLUDED_PATHS.some((path) =>
       requestUrl.includes(path),
     );
+
     const isAlreadyOnLogin =
       typeof window !== "undefined" &&
       window.location.pathname.startsWith("/login");
 
-    if (status === 401 && !isAuthRequest && !isAlreadyOnLogin) {
-      // The current session is no longer valid. Clear it and start over.
+    // ⛔ ignore non-auth related 401 during initial hydration edge cases
+    const isInitialRequest =
+      error.config?._isRetry === undefined &&
+      performance?.navigation?.type === 0;
+
+    if (
+      status === 401 &&
+      !isAuthRequest &&
+      !isAlreadyOnLogin &&
+      !isInitialRequest
+    ) {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(AUTH_STORAGE_KEY);
 
-      // Hard redirect to fully reset any stale in-memory React state.
       window.location.href = "/login";
     }
 
