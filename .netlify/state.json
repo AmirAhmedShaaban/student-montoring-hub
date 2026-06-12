@@ -1,0 +1,20 @@
+{
+	"dbConnectionString": "postgres://localhost:42915/postgres",
+	"geolocation": {
+		"data": {
+			"city": "Shibīn al Kawm",
+			"country": {
+				"code": "EG",
+				"name": "Egypt"
+			},
+			"subdivision": {
+				"code": "MNF",
+				"name": "Monufia"
+			},
+			"timezone": "Africa/Cairo",
+			"latitude": 30.5525,
+			"longitude": 31.0115
+		},
+		"timestamp": 1781245085211
+	}
+}

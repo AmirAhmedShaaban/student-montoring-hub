@@ -1,4 +1,3 @@
-import axios from "axios";
 import API from "./axiosConfig";
 
 /* ------------------------------------------------------------------ */
@@ -104,16 +103,9 @@ export async function changeUserPassword(payload) {
 
 export async function uploadProfilePicture(formData) {
   try {
-    const token = localStorage.getItem("student-behavior-dashboard-token");
-    const response = await axios.post(
-      `http://studentmonitor.runasp.net/api/Setting/profile-picture`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
+    const response = await API.post("/Setting/profile-picture", formData, {
+      headers: { "Content-Type": undefined },
+    });
     if (response.data && response.data.succeeded) {
       return {
         success: true,

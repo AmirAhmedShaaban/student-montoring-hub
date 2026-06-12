@@ -8,8 +8,7 @@ import {
 } from "../../../services/settingsService";
 
 import { updateProfile } from "../../../services/authService";
-
-const IMAGE_BASE_URL = "http://studentmonitor.runasp.net/";
+import { FILE_BASE_URL } from "../../../services/axiosConfig";
 
 function ProfilePictureSection({ currentPicture, userName, onPictureUpdated }) {
   const fileInputRef = useRef(null);
@@ -20,7 +19,8 @@ function ProfilePictureSection({ currentPicture, userName, onPictureUpdated }) {
   const getFullImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
-    return `${IMAGE_BASE_URL}${path}`;
+    const normalized = path.startsWith("/") ? path : `/${path}`;
+    return `${FILE_BASE_URL}${normalized}`;
   };
 
   const handleFileChange = async (event) => {

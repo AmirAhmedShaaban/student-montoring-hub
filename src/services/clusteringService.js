@@ -1,9 +1,7 @@
-import API from "./axiosConfig";
+import API, { FILE_BASE_URL } from "./axiosConfig";
 
-// Base origin of the API, derived from the axios instance baseURL.
-// Used to build absolute URLs for generated report files.
-// Example: "http://studentmonitor.runasp.net/api" -> "http://studentmonitor.runasp.net"
-const API_ORIGIN = (API.defaults.baseURL || "").replace(/\/api\/?$/, "");
+// Use a separate file base URL for generated report and download URLs.
+// This must be distinct from the Axios API baseURL.
 
 /**
  * Build an absolute URL for a server-provided file path.
@@ -14,7 +12,7 @@ function buildFileUrl(path) {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
   const normalized = path.startsWith("/") ? path : `/${path}`;
-  return `${API_ORIGIN}${normalized}`;
+  return `${FILE_BASE_URL}${normalized}`;
 }
 
 /**

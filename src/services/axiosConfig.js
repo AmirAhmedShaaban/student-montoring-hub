@@ -5,9 +5,6 @@ const AUTH_STORAGE_KEY = "student-behavior-dashboard-auth";
 
 const API = axios.create({
   baseURL: "/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // Attach the bearer token to every request when available.
@@ -16,6 +13,15 @@ API.interceptors.request.use((config) => {
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Handle Content-Type intelligently:
+  // - FormData: let browser set multipart/form-data with correct boundary
+  // - JSON/objects: set application/json
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  } else if (config.data && !config.headers["Content-Type"]) {
+    config.headers["Content-Type"] = "application/json";
   }
 
   return config;
@@ -61,5 +67,9 @@ API.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+// Separate base URL for file/image/static asset hosting.
+// This is intentionally distinct from the Axios API proxy baseURL.
+export const FILE_BASE_URL = import.meta.env.VITE_FILE_BASE_URL || "/files";
 
 export default API;
